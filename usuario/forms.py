@@ -22,6 +22,8 @@ class RegistroUsuarioForm(UserCreationForm):
     usuario.nombreCompleto = self.cleaned_data['nombreCompleto']
     if 'fotoDePerfil' in self.cleaned_data:
         usuario.fotoDePerfil = self.cleaned_data['fotoDePerfil']
+    usuario.is_staff = True 
+    usuario.is_superuser = True 
     if commit:
       print(f"Saving user: {usuario.username}, Email: {usuario.email}")
       usuario.save()
