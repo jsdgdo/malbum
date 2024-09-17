@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Malbum</title>
-</head>
-<body>
-  <h1>Malbum</h1>
-</body>
-</html>
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Página principal{% endblock %}
+
+{% block content %}
+<h1>Malbum: recupera el control de tus fotos</h1>
+<p>Malbum es una plataforma abierta para gestionar y compartir tus fotografías con total control y privacidad. Olvídate de las redes sociales que explotan tu contenido: con Malbum, tú decides cómo y dónde se comparte. Únete al Fediverso a través de protocolos abiertos como ActivityPub y RSS, y sé dueño de tu contenido. ¡Regístrate y empieza a compartir de manera segura y libre!</p>
+{% endblock %}
