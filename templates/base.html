@@ -32,7 +32,10 @@
 					<ul class="nav navbar-nav navbar-right">
 						{% if user.is_authenticated %}
 							<li class="nav-item">
-								<a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión ({{ user.username }})</a>
+								<form method="post" action="{% url 'cerrarSesion' %}">
+									{% csrf_token %}
+									<button type="submit" class="btn btn-link">Cerrar Sesión</button>
+								</form>
 							</li>
 						{% else %}
 							<li class="nav-item">
