@@ -13,7 +13,7 @@ class RegistroUsuarioForm(UserCreationForm):
     labels = {
       "username": "Nombre de usuario",
       "password1": "Contraseña",
-      "password2": "Repetir contraseña"
+      "password2": "Repetir contraseña",
     }
   
   def save(self, commit=True):
