@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Subir foto{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center">Subir Nueva Foto</h2>
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      <ul>
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <li><strong>{{field.label}}: </strong>{{error}}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
+      {{ form.titulo | add_class:"form-control"}}
+    </div>
+    <div class="form-group">
+      <label for="{{ form.imagen.id_for_label }}" class="form-label">{{ form.imagen.label }}</label>
+      {{ form.imagen | add_class:"form-control" }}
+    </div>
+    <div>
+      <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion | add_class:"form-control" }}</label>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Subir Foto</button>
+  </form>
+</div>
+{% endblock %}
