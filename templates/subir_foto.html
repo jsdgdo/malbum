@@ -2,6 +2,7 @@
 {% block title %}Subir foto{% endblock %}
 
 {% block content %}
+{% load widget_tweaks %}
 <div class="container mt-5">
   <h2 class="text-center">Subir Nueva Foto</h2>
   {% if form.errors %}
@@ -19,14 +20,14 @@
     {% csrf_token %}
     <div class="form-group">
       <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
-      {{ form.titulo | add_class:"form-control"}}
+      {{ form.titulo|add_class:"form-control"}}
     </div>
     <div class="form-group">
       <label for="{{ form.imagen.id_for_label }}" class="form-label">{{ form.imagen.label }}</label>
-      {{ form.imagen | add_class:"form-control" }}
+      {{ form.imagen|add_class:"form-control" }}
     </div>
     <div>
-      <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion | add_class:"form-control" }}</label>
+      <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion|add_class:"form-control" }}</label>
     </div>
     <button type="submit" class="btn btn-primary mt-3">Subir Foto</button>
   </form>
