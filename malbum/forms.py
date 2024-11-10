@@ -9,4 +9,7 @@ class FotoForm(forms.ModelForm):
       'titulo': 'Título',
       'imagen': 'Imagen',
       'descripcion': 'Descripción',
+      'alt_descripcion': 'Descripción alternativa',
+      'licencia': 'Licencia',
+      'advertencia_contenido': 'Advertencia de contenido'
     }
