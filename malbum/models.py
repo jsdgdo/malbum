@@ -18,6 +18,8 @@ class Foto(models.Model):
   configuracion = models.CharField(max_length=255, blank=True, verbose_name="Configuración")
 
   usuario = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="fotos", verbose_name="Usuario")
+  etiquetas = models.ManyToManyField('Etiqueta', blank=True, related_name="fotos", verbose_name="Etiquetas")
+  colecciones = models.ManyToManyField('Coleccion', blank=True, related_name="fotos", verbose_name="Colecciones")
 
   def save(self, *args, **kwargs):
     super(Foto, self).save(*args, **kwargs)
@@ -39,6 +41,21 @@ class Foto(models.Model):
         self.configuracion = f"ISO {exif.get('ISOSpeedRatings', 'Desconocido')}, {exif.get('ExposureTime', 'N/A')}s, f/{exif.get('FNumber', 'N/A')}"
     except Exception as e:
       print(f"Error extracting EXIF data: {e}")
+
+  def __str__(self):
+    return self.titulo
+
+class Etiqueta(models.Model):
+  nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre")
+
+  def __str__(self):
+    return self.nombre
+
+class Coleccion(models.Model):
+  titulo=models.CharField(max_length=255, verbose_name="Titulo")
+  descripcion=models.TextField(blank=True, verbose_name="Descripcion")
+  usuario=models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="colecciones", verbose_name="Usuario")
+  fecha_creacion=models.DateTimeField(default=timezone.now, verbose_name="Fecha de creación")
 
   def __str__(self):
     return self.titulo
