@@ -16,7 +16,8 @@ def subir_foto(request):
       foto = form.save(commit=False)
       foto.usuario = request.user
       foto.save()
-      foto.save_m2m()
+      
+      form.save_m2m()
       return redirect('inicio')
   else:
     form = FotoForm()

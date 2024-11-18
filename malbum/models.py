@@ -30,7 +30,6 @@ class Foto(models.Model):
     try:
       image = Image.open(self.imagen.path)
       exif_data = image._getexif()
-      print(f"EXIF Data Retrieved: {exif_data}")
 
       if exif_data:
         exif={ExifTags.TAGS.get(tag, tag): value for tag, value in exif_data.items()}

@@ -39,8 +39,8 @@
       {{ form.licencia|add_class:"form-control" }}
     </div>
     <div>
+      {{form.advertencia_contenido|add_class:"form-check-input"}}
       <label for="{{ form.advertencia_contenido.id_for_label }}" class="form-check-label">{{ form.advertencia_contenido.label}}</label>
-      {{form.advertencia_contenido|add_class:"form-control"}}
     </div>
     <div>
       <label for="{{ form.etiquetas.id_for_label }}" class="form-check-label">{{ form.etiquetas.label}}</label>
