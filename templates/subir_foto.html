@@ -42,7 +42,97 @@
       <label for="{{ form.advertencia_contenido.id_for_label }}" class="form-check-label">{{ form.advertencia_contenido.label}}</label>
       {{form.advertencia_contenido|add_class:"form-control"}}
     </div>
+    <div>
+      <label for="{{ form.etiquetas.id_for_label }}" class="form-check-label">{{ form.etiquetas.label}}</label>
+      {{form.etiquetas|add_class:"form-control"}}
+      <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#modalAgregarEtiqueta">Crear nueva etiqueta</button>
+    </div>
+    <div>
+      <label for="{{ form.colecciones.id_for_label }}" class="form-check-label">{{ form.colecciones.label}}</label>
+      {{form.colecciones|add_class:"form-control"}}
+      <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#modalAgregarColeccion">Crear nueva colección</button>
+    </div>
     <button type="submit" class="btn btn-primary mt-3">Subir Foto</button>
   </form>
 </div>
+<div class="modal fade" id="modalAgregarEtiqueta" tabindex="-1" aria-labeledby="#tituloAgregarEtiqueta" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tituloAgregarEtiqueta">Agregar nueva etiqueta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="etiquetaForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="nombre">Etiqueta</label>
+            <input type="text" id="nombre" name="nombre" class="form-control">
+          </div>
+          <button type="button" class="btn btn-primary mt-2" onClick="submitEtiqueta()">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modalAgregarColeccion" tabindex="-1" aria-labeledby="#tituloAgregarColeccion" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tituloAgregarColeccion">Agregar nueva colección</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="coleccionForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="tituloColeccion">Título de la colección</label>
+            <input type="text" id="tituloColeccion" name="titulo" class="form-control">
+          </div>
+          <div class="form-group mt-2">
+            <label for="descripcionColeccion">Descripción</label>
+            <textarea name="descripcion" id="descripcionColeccion" class="form-control"></textarea>
+          </div>
+          <button type="button" class="btn btn-primary mt-2" onClick="submitColeccion()">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function submitEtiqueta() {
+    const nombre = document.getElementById('nombre').value;
+    fetch("{% url 'agregar_etiqueta' %}", {
+      method: "POST",
+      headers: {"X-CSRFToken": "{{ csrf_token }}"},
+      body: new URLSearchParams({ nombre: nombre })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.id) {
+        const option = new Option(data.nombre, data.id, true, true);
+        document.getElementById('id_etiquetas').append(option);
+        $('#modalAgregarEtiqueta').modal('hide');
+      }
+    })
+    .catch(error => console.error("error al agregar tag:", error));
+  }
+  function submitColeccion() {
+    const formData = new FormData(document.getElementById('coleccionForm'));
+    fetch("{% url 'agregar_coleccion' %}", {
+      method: "POST",
+      headers: {"X-CSRFToken": "{{ csrf_token }}"}, 
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.id) {
+        const option = new Option(data.titulo, data.id, true, true);
+        document.getElementById("id_colecciones").append(option);
+        $('#modalAgregarColeccion').modal('hide');
+      }
+    })
+    .catch(error => console.error("Error al agregar coleccion:", error));
+  }
+</script>
 {% endblock %}

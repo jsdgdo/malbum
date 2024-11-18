@@ -10,7 +10,7 @@ class Foto(models.Model):
   descripcion = models.TextField(blank=True, verbose_name="Descripción", help_text="Descripción de la imagen")
   fecha_subida = models.DateTimeField(default=timezone.now, verbose_name="Fecha de subida")
   alt_descripcion = models.CharField(max_length=255, blank=True, verbose_name="Descripción alternativa", help_text="Descripción alternativa para lectores de pantalla")
-  licencia = models.TextField(blank=True, verbose_name="Licencia", help_text="Detalles sobre la licencia de imagen (ej. Creative Commons, Copyright, etc.)")
+  licencia = models.CharField(max_length=255, blank=True, verbose_name="Licencia", help_text="Detalles sobre la licencia de imagen (ej. Creative Commons, Copyright, etc.)")
   advertencia_contenido = models.BooleanField(default=False, verbose_name="Advertencia de contenido", help_text="Indica si esta imagen debe mostrarse con una advertencia de contenido.")
 
   camara = models.CharField(max_length=100, blank=True, verbose_name="Cámara")

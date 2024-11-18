@@ -1,5 +1,5 @@
 from django import forms
-from .models import Foto
+from .models import Foto, Etiqueta, Coleccion
 
 class FotoForm(forms.ModelForm):
   class Meta:
@@ -14,4 +14,19 @@ class FotoForm(forms.ModelForm):
       'advertencia_contenido': 'Advertencia de contenido',
       'etiquetas': 'Etiquetas',
       'colecciones': 'Colecciones'
+    }
+
+class EtiquetaForm(forms.ModelForm):
+  class Meta:
+    model = Etiqueta
+    fields = ['nombre']
+    labels = {'nombre': 'Nombre de la etiqueta'}
+
+class ColeccionForm(forms.ModelForm):
+  class Meta:
+    model = Coleccion
+    fields = ['titulo', 'descripcion']
+    labels = {
+      'titulo': 'Título de la colección',
+      'descripcion': 'Descripción'
     }

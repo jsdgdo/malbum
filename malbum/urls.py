@@ -25,7 +25,9 @@ urlpatterns = [
     path('', views.inicio, name="inicio"),
     path('admin/', admin.site.urls),
     path('usuario/', include('usuario.urls')),
-    path('subir-foto/', subir_foto, name='subir_foto')
+    path('subir-foto/', subir_foto, name='subir_foto'),
+    path('agregar-etiqueta', views.agregar_etiqueta, name='agregar_etiqueta'),
+    path('agregar-coleccion', views.agregar_coleccion, name='agregar_coleccion'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
