@@ -3,7 +3,8 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import FotoForm, EtiquetaForm, ColeccionForm
-from .models import Etiqueta, Coleccion
+from .models import Foto, Etiqueta, Coleccion
+from django.shortcuts import get_object_or_404
 
 def inicio(request):
   return render(request, 'inicio.html')
@@ -16,7 +17,7 @@ def subir_foto(request):
       foto = form.save(commit=False)
       foto.usuario = request.user
       foto.save()
-      
+
       form.save_m2m()
       return redirect('inicio')
   else:
@@ -42,3 +43,27 @@ def agregar_coleccion(request):
     coleccion.save()
     return JsonResponse({'id': coleccion.id, 'titulo': coleccion.titulo})
   return JsonResponse({'error': form.errors}, status=400)
+
+@login_required
+def tablon(request):
+  fotos = Foto.objects.filter(usuario=request.user)
+  etiqueta = request.GET.get('tag')
+  coleccion = request.GET.get('coleccion')
+
+  if etiqueta:
+    fotos = fotos.filter(etiquetas__nombre=etiqueta)
+  if coleccion:
+    fotos = fotos.filter(colecciones__titulo=coleccion)
+  
+  context = { 
+    'fotos' : fotos,
+    'eitquetas' : Etiqueta.objects.all(),
+    'colecciones' : Coleccion.objects.all(),
+    'etiqueta_seleccionada' : etiqueta,
+    'coleccion_seleccionada' : coleccion
+  }
+  return render(request, 'tablon.html', context)
+
+def detalle_foto(request, id):
+    foto = get_object_or_404(Foto, id=id)
+    return render(request, 'detalle_foto.html', {'foto': foto})

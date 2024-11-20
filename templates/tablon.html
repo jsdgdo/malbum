@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Tablón de Fotos{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Tablón de Fotos</h2>
+
+    <div class="row">
+        <!-- Sidebar for filtering -->
+        <div class="col-md-3">
+            <h5>Filtrar por Etiqueta</h5>
+            <ul class="list-group mb-4">
+                {% for etiqueta in etiquetas %}
+                    <li class="list-group-item {% if etiqueta.nombre == selected_tag %}active{% endif %}">
+                        <a href="{% url 'tablon' %}?tag={{ etiqueta.nombre }}" class="text-decoration-none">
+                            {{ etiqueta.nombre }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <h5>Filtrar por Colección</h5>
+            <ul class="list-group">
+                {% for coleccion in colecciones %}
+                    <li class="list-group-item {% if coleccion.titulo == selected_coleccion %}active{% endif %}">
+                        <a href="{% url 'tablon' %}?coleccion={{ coleccion.titulo }}" class="text-decoration-none">
+                            {{ coleccion.titulo }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Main gallery content -->
+        <div class="col-md-9">
+            <div class="row">
+                {% for foto in fotos %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <img src="{{ foto.imagen.url }}" class="card-img-top" alt="{{ foto.alt_descripcion }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ foto.titulo }}</h5>
+                                <p class="card-text">{{ foto.descripcion|truncatewords:10 }}</p>
+                                <a href="{% url 'detalle_foto' foto.id %}" class="btn btn-primary">Ver Detalle</a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-center">No hay fotos disponibles.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

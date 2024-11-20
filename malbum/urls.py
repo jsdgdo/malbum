@@ -28,6 +28,8 @@ urlpatterns = [
     path('subir-foto/', subir_foto, name='subir_foto'),
     path('agregar-etiqueta', views.agregar_etiqueta, name='agregar_etiqueta'),
     path('agregar-coleccion', views.agregar_coleccion, name='agregar_coleccion'),
+    path('tablon/', views.tablon, name='tablon'),
+    path('foto/<int:id>/', views.detalle_foto, name='detalle_foto'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
