@@ -5,15 +5,76 @@
 {% block content %}
 <div class="container mt-5">
     <h2>{{ foto.titulo }}</h2>
-    <img src="{{ foto.imagen.url }}" class="img-fluid" alt="{{ foto.alt_descripcion }}">
-    <p class="mt-3">{{ foto.descripcion }}</p>
+    <div id="foto-container" class="position-relative">
+        <div id="blur-overlay" class="blur-overlay {% if foto.advertencia_contenido %}active{% endif %}">
+            <p class="warning-text">Advertencia de contenido</p>
+            <button id="toggle-blur" class="btn btn-warning">Mostrar contenido</button>
+        </div>
+        <img src="{{ foto.imagen.url }}" alt="{{ foto.alt_descripcion }}" class="img-fluid mb-3">
+    </div>
+    <p class="mt-3">{% if foto.descripcion %}{{ foto.descripcion }}{% else %}Sin descripción{% endif %}</p>
 
     <h5>Detalles de la Imagen:</h5>
     <ul>
-        <li><strong>Etiquetas:</strong> {% for etiqueta in foto.etiquetas.all %}{{ etiqueta.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
-        <li><strong>Colección:</strong> {{ foto.colecciones.first.titulo }}</li>
-        <li><strong>Advertencia de contenido:</strong> {% if foto.advertencia_contenido %}Sí{% else %}No{% endif %}</li>
-        <li><strong>Licencia:</strong> {{ foto.licencia }}</li>
+        <li><strong>Etiquetas:</strong>
+            {% if etiquetas %}{% for etiqueta in foto.etiquetas.all %}{{ etiqueta.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}No hay etiquetas{% endif %}
+        </li>
+        <li><strong>Colección:</strong>
+            {% if colecciones %}{% for coleccion in foto.colecciones.all %}{{ coleccion.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}Sin colección{% endif %}
+        </li>
+        {% comment %} <li><strong>Advertencia de contenido:</strong> {% if foto.advertencia_contenido %}Sí{% else %}No{% endif %}</li> {% endcomment %}
+        <li><strong>Licencia:</strong> {% if foto.licencia %}{{ foto.licencia }}{% else %}Sin licencia especificada{% endif %}</li>
     </ul>
 </div>
-{% endblock %}
+<style>
+    /* Blur effect and overlay styles */
+    .blur-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.85);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 1.2em;
+        z-index: 10;
+        display: none;
+    }
+
+    .blur-overlay.active {
+        display: flex;
+    }
+
+    #foto-container img {
+        filter: blur(0);
+        transition: filter 0.3s;
+    }
+
+    .blur-overlay.active + img {
+        filter: blur(5px);
+    }
+
+    .warning-text {
+        margin-bottom: 1rem;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleButton = document.getElementById("toggle-blur");
+        const blurOverlay = document.getElementById("blur-overlay");
+
+        toggleButton.addEventListener("click", function() {
+            blurOverlay.classList.toggle("active");
+            toggleButton.textContent = blurOverlay.classList.contains("active") 
+                ? "Mostrar contenido" 
+                : "Ocultar contenido";
+        });
+    });
+</script>
+{% endblock %}   

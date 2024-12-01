@@ -6,8 +6,14 @@ from .forms import FotoForm, EtiquetaForm, ColeccionForm
 from .models import Foto, Etiqueta, Coleccion
 from django.shortcuts import get_object_or_404
 
-def inicio(request):
+def splash(request):
   return render(request, 'inicio.html')
+
+def inicio(request):
+  if request.user.is_authenticated:
+    return redirect('tablon')
+  else:
+    return render(request, 'inicio.html')
 
 @login_required
 def subir_foto(request):
@@ -66,4 +72,10 @@ def tablon(request):
 
 def detalle_foto(request, id):
     foto = get_object_or_404(Foto, id=id)
+    context = {
+        'foto': foto,
+        'etiquetas': foto.etiquetas.all() if foto.etiquetas.exists() else None,
+        'colecciones': foto.colecciones.all() if foto.colecciones.exists() else None,
+        'licencia': foto.licencia
+    }
     return render(request, 'detalle_foto.html', {'foto': foto})

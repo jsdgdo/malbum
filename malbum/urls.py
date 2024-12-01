@@ -29,6 +29,7 @@ urlpatterns = [
     path('agregar-etiqueta', views.agregar_etiqueta, name='agregar_etiqueta'),
     path('agregar-coleccion', views.agregar_coleccion, name='agregar_coleccion'),
     path('tablon/', views.tablon, name='tablon'),
+    path('splash/', views.splash, name='splash'),
     path('foto/<int:id>/', views.detalle_foto, name='detalle_foto'),
 ]
 
