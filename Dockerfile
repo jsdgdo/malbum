@@ -1,28 +1,20 @@
-FROM python:3.12-slim
+FROM python:3.12
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONBUFFERED=1
 
-# Set working directory
-WORKDIR /app
+WORKDIR /code
 
-# Copy and install requirements
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
 
-# Install SQLite
-RUN apt-get update && apt-get install -y --no-install-recommends sqlite3 && apt-get clean
+RUN pip install -r requirements.txt
+RUN apt-get update && apt-get install -y sqlite3
 
-# Copy project files into the container
-COPY . /app/
+COPY . .
 
-# Copy and set permissions for entrypoint script
-COPY entrypoint.sh /app/
-RUN chmod +x /app/entrypoint.sh
+COPY entrypoint.sh /code/
+RUN chmod +x /code/entrypoint.sh
 
-# Expose the application port
 EXPOSE 8080
 
-# Use entrypoint for initialization and command execution
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/code/entrypoint.sh"]
 CMD ["python3", "manage.py", "runserver", "0.0.0.0:8080"]
