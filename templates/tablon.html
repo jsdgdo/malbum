@@ -8,13 +8,12 @@
     <h2 class="text-center mb-4">Tablón de Fotos</h2>
 
     <div class="row">
-        <!-- Sidebar for filtering -->
         <div class="col-md-3">
             <h5>Filtrar por Etiqueta</h5>
             <ul class="list-group mb-4">
                 {% for etiqueta in etiquetas %}
-                    <li class="list-group-item {% if etiqueta.nombre == selected_tag %}active{% endif %}">
-                        <a href="{% url 'tablon' %}?tag={{ etiqueta.nombre }}" class="text-decoration-none">
+                    <li class="list-group-item {% if etiqueta.nombre == etiqueta_seleccionada %}active{% endif %}">
+                        <a href="{% url 'tablon' %}?etiqueta={{ etiqueta.nombre }}" class="text-decoration-none">
                             {{ etiqueta.nombre }}
                         </a>
                     </li>
@@ -24,16 +23,21 @@
             <h5>Filtrar por Colección</h5>
             <ul class="list-group">
                 {% for coleccion in colecciones %}
-                    <li class="list-group-item {% if coleccion.titulo == selected_coleccion %}active{% endif %}">
+                    <li class="list-group-item {% if coleccion.titulo == coleccion_seleccionada %}active{% endif %}">
                         <a href="{% url 'tablon' %}?coleccion={{ coleccion.titulo }}" class="text-decoration-none">
                             {{ coleccion.titulo }}
                         </a>
                     </li>
                 {% endfor %}
             </ul>
+
+            {% if coleccion_seleccionada or etiqueta_seleccionada %}
+                <div class="mt-4">
+                    <a href="{% url 'tablon' %}" class="btn btn-outline-secondary btn-sm">Quitar filtros</a>
+                </div>
+            {% endif %}
         </div>
 
-        <!-- Main gallery content -->
         <div class="col-md-9">
             <div class="row">
                 {% for foto in fotos %}

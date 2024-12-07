@@ -4,7 +4,7 @@
 {% block content %}
 {% load widget_tweaks %}
 <div class="container mt-5">
-  <h2 class="text-center">Subir Nueva Foto</h2>
+  <h2 class="text-center">{% if foto %}Editar Foto{% else %}Subir Nueva Foto{% endif %}</h2>
   {% if form.errors %}
     <div class="alert alert-danger">
       <ul>
@@ -16,7 +16,7 @@
       </ul>
     </div>
   {% endif %}
-  <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+  <form method="post" enctype="multipart/form-data" action="{% if foto %}{% url 'editar_foto' foto.id %}{% else %}{% url 'subir_foto' %}{% endif %}" class="needs-validation" novalidate>
     {% csrf_token %}
     <div class="form-group">
       <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
@@ -52,7 +52,9 @@
       {{form.colecciones|add_class:"form-control"}}
       <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#modalAgregarColeccion">Crear nueva colección</button>
     </div>
-    <button type="submit" class="btn btn-primary mt-3">Subir Foto</button>
+    <button type="submit" class="btn btn-primary mt-3">
+      {% if foto %}Guardar Cambios{% else %}Subir Foto{% endif %}
+    </button>
   </form>
 </div>
 <div class="modal fade" id="modalAgregarEtiqueta" tabindex="-1" aria-labeledby="#tituloAgregarEtiqueta" aria-hidden="true">

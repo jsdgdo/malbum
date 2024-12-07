@@ -21,6 +21,7 @@ from .views import subir_foto
 from django.conf import settings
 from django.conf.urls.static import static
 from .feeds import FotoFeed
+from .views import control
 
 urlpatterns = [
     path('', views.inicio, name="inicio"),
@@ -33,7 +34,9 @@ urlpatterns = [
     path('tablon/', views.tablon, name='tablon'),
     path('splash/', views.splash, name='splash'),
     path('foto/<int:id>/', views.detalle_foto, name='detalle_foto'),
+    path('foto/<int:id>/editar/', views.editar_foto, name='editar_foto'),
     path("rss/", FotoFeed(), name="rss_feed"),
+    path('control/', control, name='control'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
