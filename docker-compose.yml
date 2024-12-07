@@ -1,7 +1,18 @@
+version: '3.9'
+
 services:
-  django:
+  web:
     build: .
+    command: python manage.py runserver 0.0.0.0:8080
     ports:
       - "8080:8080"
     volumes:
-      - .:/code
+      - .:/app
+      - sqlite_data:/app/db.sqlite3
+      - static_data:/app/static
+    environment:
+      DJANGO_SETTINGS_MODULE: malbum.settings
+
+volumes:
+  sqlite_data:
+  static_data:

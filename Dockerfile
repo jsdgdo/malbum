@@ -1,16 +1,23 @@
-FROM python:3.12
+FROM python:3.12-slim
 
-ENV PYTHONBUFFERED=1
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
 
-WORKDIR /code
+# Set working directory
+WORKDIR /app
 
-COPY requirements.txt .
+# Copy and install requirements
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install -r requirements.txt
-RUN apt-get update && apt-get install -y sqlite3
+# Install SQLite
+RUN apt-get update && apt-get install -y --no-install-recommends sqlite3 && apt-get clean
 
-COPY . .
+# Copy project files into the container
+COPY . /app/
 
-EXPOSE 8000
+# Expose the application port
+EXPOSE 8080
 
+# Entrypoint for running the application
 CMD ["python3", "manage.py", "runserver", "0.0.0.0:8080"]
