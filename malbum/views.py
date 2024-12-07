@@ -149,4 +149,5 @@ def control(request):
 
       return JsonResponse({'success': True, 'message': 'Configuraciones actualizadas exitosamente.'})
 
-  return render(request, 'control_center.html')
+  return render(request, 'control.html')
+
