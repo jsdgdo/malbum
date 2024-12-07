@@ -55,16 +55,19 @@
               </form>
             </li>
             {% else %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'iniciarSesion' %}"
-                >Iniciar Sesión</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'registrarUsuario' %}"
-                >Crear usuario publicador</a
-              >
-            </li>
+              {% if hay_usuario %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'iniciarSesion' %}"
+                    >Iniciar Sesión</a
+                  >
+                </li>
+              {% else %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'registrarUsuario' %}"
+                    >Crear usuario publicador</a
+                  >
+                </li>
+              {% endif %}
             {% endif %}
           </ul>
         </div>

@@ -13,14 +13,15 @@ from malbum.models import Foto, Etiqueta, Coleccion
 from usuario.models import Usuario
 
 
-def splash(request):
-  return render(request, 'inicio.html')
-
 def inicio(request):
   if request.user.is_authenticated:
     return redirect('tablon')
   else:
-    return render(request, 'inicio.html')
+    return redirect('splash')
+
+def splash(request):
+  hay_usuario = Usuario.objects.exists()
+  return render(request, 'inicio.html', {'hay_usuario': hay_usuario})
 
 @login_required
 def subir_foto(request):
