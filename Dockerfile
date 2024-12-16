@@ -18,4 +18,4 @@ RUN dos2unix /code/entrypoint.sh && apt-get --purge remove -y dos2unix && rm -rf
 EXPOSE 8080
 
 ENTRYPOINT ["/code/entrypoint.sh"]
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8080"]
+CMD ["python3", "-u", "manage.py", "runserver", "0.0.0.0:8080"]

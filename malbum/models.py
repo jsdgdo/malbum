@@ -24,7 +24,8 @@ class Foto(models.Model):
   def save(self, *args, **kwargs):
     super(Foto, self).save(*args, **kwargs)
     self.extract_exif_data()
-    super(Foto, self).save(*args, **kwargs)
+    if self._state.adding is False:
+      super(Foto, self).save(update_fields=['camara', 'lente', 'configuracion'])
   
   def extract_exif_data(self):
     try:

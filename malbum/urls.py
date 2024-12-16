@@ -22,6 +22,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .feeds import FotoFeed
 from .views import control
+from .views import importar_datos
 
 urlpatterns = [
     path('', views.inicio, name="inicio"),
@@ -37,6 +38,7 @@ urlpatterns = [
     path('foto/<int:id>/editar/', views.editar_foto, name='editar_foto'),
     path("rss/", FotoFeed(), name="rss_feed"),
     path('control/', control, name='control'),
+    path('importar-datos/', importar_datos, name='importar_datos'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
