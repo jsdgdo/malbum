@@ -101,8 +101,6 @@ def editar_foto(request, id):
     form = FotoForm(instance=foto)
   return render(request, 'subir_foto.html', {'form': form, 'foto': foto})
 
-
-
 def handle_import_data(request):
   if request.method == 'POST' and request.FILES.get('data_file'):
     try:
@@ -186,7 +184,7 @@ def importar_datos(request):
   if request.method == 'POST':
     success, message = handle_import_data(request)
     if success:
-      return JsonResponse({'success': True, 'message': message})
+      return redirect('inicio')
     else:
       return JsonResponse({'success': False, 'message': message}, status=400)
   return render(request, 'importar_datos.html')
