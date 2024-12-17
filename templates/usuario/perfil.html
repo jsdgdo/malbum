@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Perfil de {{ usuario.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <!-- Profile Header -->
+    <div class="col-md-3 text-center">
+      {% if usuario.fotoDePerfil %}
+        <img src="{{ usuario.fotoDePerfil.url }}" class="img-thumbnail rounded-circle" alt="Avatar de {{ usuario.username }}" style="width: 150px; height: 150px;">
+      {% else %}
+        <img src="https://via.placeholder.com/150" class="img-thumbnail rounded-circle" alt="Avatar predeterminado">
+      {% endif %}
+      <h3 class="mt-3">{{ usuario.nombreCompleto|default:usuario.username }}</h3>
+      <p class="text-muted">@{{ usuario.username }}</p>
+      {% if usuario.bio %}
+        <p>{{ usuario.bio }}</p>
+      {% else %}
+        <p><em>Sin biografía</em></p>
+      {% endif %}
+    </div>
+
+    <!-- Photo Stream -->
+    <div class="col-md-9">
+      <h4>Fotos subidas</h4>
+      {% if fotos %}
+        <div class="row">
+          {% for foto in fotos %}
+            <div class="col-md-4 mb-4">
+              <div class="card">
+                <img src="{{ foto.imagen.url }}" class="card-img-top" alt="{{ foto.titulo }}">
+                <div class="card-body">
+                  <h5 class="card-title">{{ foto.titulo }}</h5>
+                  <p class="card-text">{{ foto.descripcion|truncatechars:50 }}</p>
+                  <a href="{% url 'detalle_foto' foto.id %}" class="btn btn-sm btn-outline-primary">Ver detalles</a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>Este usuario no ha subido ninguna foto todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

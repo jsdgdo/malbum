@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from .models import Usuario
+from malbum.models import Foto
 
 
 def registrarUsuario(request):
@@ -20,6 +21,18 @@ def registrarUsuario(request):
   else:
     form = RegistroUsuarioForm()
   return render(request, "usuario/registrar.html", {"form": form})
+
+def perfil_usuario(request, username):
+  # Get the user or return a 404 if not found
+  usuario = get_object_or_404(Usuario, username=username)
+  
+  # Fetch the photos uploaded by the user
+  fotos = Foto.objects.filter(usuario=usuario).order_by('-fecha_subida')
+
+  return render(request, 'usuario/perfil.html', {
+    'usuario': usuario,
+    'fotos': fotos,
+  })
 
 def activitypub_actor(request, username):
   user = get_object_or_404(Usuario, username=username)

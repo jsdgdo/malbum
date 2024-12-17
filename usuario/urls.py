@@ -7,6 +7,7 @@ urlpatterns = [
     path('registrar/', registrarUsuario, name="registrarUsuario"),
     path('iniciar-sesion/', auth_views.LoginView.as_view(template_name='usuario/iniciar-sesion.html'), name='iniciarSesion'),
     path('cerrar-sesion/', auth_views.LogoutView.as_view(next_page='inicio'), name='cerrarSesion'),
+    path('<str:username>/', views.perfil_usuario, name='perfil_usuario'),
     path('recuperar-contrasena/', auth_views.PasswordResetView.as_view(template_name='usuario/recuperar-contrasena.html'), name='password_reset'),
     path('recuperar-contrasena/hecho/', auth_views.PasswordResetDoneView.as_view(template_name='usuario/recuperar-contrasena-hecho.html'), name='password_reset_done'),
     path('recuperar-contrasena-confirmar/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='usuario/recuperar-contrasena-confirmar.html'), name='password_reset_confirm'),
