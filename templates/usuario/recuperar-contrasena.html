@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Restablecer Contraseña{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>¿Olvidaste tu contraseña?</h2>
+  <p>Ingresa tu correo electrónico y te enviaremos instrucciones para restablecerla.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="id_email">Correo Electrónico</label>
+      <input type="email" name="email" id="id_email" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Enviar Instrucciones</button>
+  </form>
+</div>
+{% endblock %}

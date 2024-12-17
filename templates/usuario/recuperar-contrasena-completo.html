@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Contraseña Restablecida{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+  <h2>Contraseña Restablecida</h2>
+  <p>Tu contraseña se ha restablecido exitosamente. Puedes <a href="{% url 'iniciarSesion' %}">iniciar sesión</a> ahora.</p>
+</div>
+{% endblock %}
