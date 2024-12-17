@@ -4,6 +4,8 @@ from django.db import models
 class Usuario(AbstractUser):
   nombreCompleto = models.CharField(max_length=255)
   fotoDePerfil = models.ImageField(upload_to='profile_pics', null=True, blank=True)
+  bio = models.TextField(null=True, blank=True, verbose_name="Biografía")
+  email = models.EmailField(unique=True, verbose_name="Correo Electrónico")
   activitypub_id = models.URLField(
     unique=True, blank=True,
     help_text="The unique ID for ActivityPub federation."
