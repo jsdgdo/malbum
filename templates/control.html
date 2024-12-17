@@ -37,17 +37,5 @@
     <button type="submit" class="btn btn-primary mt-2">Exportar Datos</button>
   </form>
   <br>
-  <hr>
-
-  <h3>Importar Datos</h3>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <div class="form-group">
-      <label for="data_file">Seleccionar archivo JSON o ZIP</label>
-      <input type="file" id="data_file" name="data_file" class="form-control">
-    </div>
-    <input type="hidden" name="import_data" value="1">
-    <button type="submit" class="btn btn-primary mt-2">Importar Datos</button>
-  </form>
 </div>
 {% endblock %}
