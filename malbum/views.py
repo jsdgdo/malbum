@@ -200,19 +200,11 @@ def handle_import_data(request):
 def control(request):
   if request.method == 'POST':
     if 'reset_installation' in request.POST:
-      # Delete all data
-      with connection.cursor() as cursor:
-        # Disable foreign key checks temporarily
-        cursor.execute('SET FOREIGN_KEY_CHECKS = 0;')
-        
-        # Clear all tables
-        Usuario.objects.all().delete()
-        Foto.objects.all().delete()
-        Etiqueta.objects.all().delete()
-        Coleccion.objects.all().delete()
-        
-        # Re-enable foreign key checks
-        cursor.execute('SET FOREIGN_KEY_CHECKS = 1;')
+      # Delete all data - for SQLite we don't need to disable foreign key checks
+      Foto.objects.all().delete()
+      Etiqueta.objects.all().delete()
+      Coleccion.objects.all().delete()
+      Usuario.objects.all().delete()
       
       # Clear media files
       import shutil
