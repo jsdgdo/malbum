@@ -143,22 +143,30 @@ def handle_import_data(request):
 
         data = json.loads(json_content)
 
-      Usuario.objects.all().delete()
+      Foto.objects.all().delete()
       Etiqueta.objects.all().delete()
       Coleccion.objects.all().delete()
-      Foto.objects.all().delete()
+      Usuario.objects.all().delete()
+
+      user_id_map = {}
 
       for user_data in data.get('usuarios', []):
         print(f"Importing user: {user_data['username']}")
-        Usuario.objects.create(
+        old_id = user_data.get('id')  # Get the old ID
+        user = Usuario(
           username=user_data['username'],
-          password=user_data['password'],
           email=user_data['email'],
           is_staff=user_data['is_staff'],
           is_active=user_data['is_active'],
           is_superuser=user_data['is_superuser'],
-          date_joined=user_data['date_joined']
+          date_joined=user_data['date_joined'],
+          nombreCompleto=user_data.get('nombreCompleto', ''),
+          bio=user_data.get('bio', '')
         )
+        user.password = user_data['password']
+        user.save()
+        if old_id:
+          user_id_map[old_id] = user.id
 
       for etiqueta_data in data.get('etiquetas', []):
         print(f"Importing etiqueta: {etiqueta_data['nombre']}")
@@ -166,26 +174,34 @@ def handle_import_data(request):
 
       for coleccion_data in data.get('colecciones', []):
         print(f"Importing coleccion: {coleccion_data['titulo']}")
-        Coleccion.objects.create(
-          titulo=coleccion_data['titulo'],
-          descripcion=coleccion_data['descripcion'],
-          usuario_id=coleccion_data['usuario_id']
-        )
+        old_user_id = coleccion_data['usuario_id']
+        new_user_id = user_id_map.get(old_user_id)
+        if new_user_id:
+          usuario = Usuario.objects.get(id=new_user_id)
+          Coleccion.objects.create(
+            titulo=coleccion_data['titulo'],
+            descripcion=coleccion_data['descripcion'],
+            usuario=usuario
+          )
 
       for foto_data in data.get('fotos', []):
         print(f"Importing foto: {foto_data['titulo']}")
-        Foto.objects.create(
-          titulo=foto_data['titulo'],
-          descripcion=foto_data['descripcion'],
-          alt_descripcion=foto_data['alt_descripcion'],
-          licencia=foto_data['licencia'],
-          advertencia_contenido=foto_data['advertencia_contenido'],
-          camara=foto_data['camara'],
-          lente=foto_data['lente'],
-          configuracion=foto_data['configuracion'],
-          usuario_id=foto_data['usuario_id'],
-          imagen=f"fotos/{os.path.basename(foto_data.get('imagen', ''))}"
-        )
+        old_user_id = foto_data['usuario_id']
+        new_user_id = user_id_map.get(old_user_id)
+        if new_user_id:
+          usuario = Usuario.objects.get(id=new_user_id)
+          Foto.objects.create(
+            titulo=foto_data['titulo'],
+            descripcion=foto_data['descripcion'],
+            alt_descripcion=foto_data['alt_descripcion'],
+            licencia=foto_data['licencia'],
+            advertencia_contenido=foto_data['advertencia_contenido'],
+            camara=foto_data['camara'],
+            lente=foto_data['lente'],
+            configuracion=foto_data['configuracion'],
+            usuario=usuario,
+            imagen=f"fotos/{os.path.basename(foto_data.get('imagen', ''))}"
+          )
 
       return True, 'Datos importados exitosamente.'
     except json.JSONDecodeError as e:
@@ -200,13 +216,11 @@ def handle_import_data(request):
 def control(request):
   if request.method == 'POST':
     if 'reset_installation' in request.POST:
-      # Delete all data - for SQLite we don't need to disable foreign key checks
       Foto.objects.all().delete()
       Etiqueta.objects.all().delete()
       Coleccion.objects.all().delete()
       Usuario.objects.all().delete()
       
-      # Clear media files
       import shutil
       media_root = settings.MEDIA_ROOT
       for dir_name in ['fotos', 'profile_pics']:
@@ -215,17 +229,25 @@ def control(request):
           shutil.rmtree(dir_path)
           os.makedirs(dir_path)
       
-      # Logout the current user
       logout(request)
       return redirect('splash')
     
     elif 'export_data' in request.POST:
       include_images = request.POST.get('include_images', 'false') == 'true'
 
-      # Prepare data for export
       data = {
-        'usuarios': list(Usuario.objects.values(
-          'username', 'password', 'email', 'is_staff', 'is_active', 'is_superuser', 'date_joined')),
+        'usuarios': [{
+          'id': user.id,
+          'username': user.username,
+          'password': user.password,
+          'email': user.email,
+          'is_staff': user.is_staff,
+          'is_active': user.is_active,
+          'is_superuser': user.is_superuser,
+          'date_joined': user.date_joined,
+          'nombreCompleto': user.nombreCompleto if hasattr(user, 'nombreCompleto') else '',
+          'bio': user.bio if hasattr(user, 'bio') else '',
+        } for user in Usuario.objects.all()],
         'fotos': list(Foto.objects.values(
           'titulo', 'descripcion', 'alt_descripcion', 'licencia', 'advertencia_contenido',
           'camara', 'lente', 'configuracion', 'usuario_id', 'imagen')),
@@ -237,13 +259,11 @@ def control(request):
       json_data = json.dumps(data, ensure_ascii=False, indent=4, cls=DjangoJSONEncoder)
 
       if include_images:
-        # Prepare a ZIP file for data and images
+
         buffer = BytesIO()
         with zipfile.ZipFile(buffer, 'w') as zip_file:
-          # Add JSON data to the ZIP
           zip_file.writestr('db.json', json_data)
 
-          # Add images to the ZIP
           for foto in Foto.objects.all():
             if foto.imagen:
               image_path = os.path.join(settings.MEDIA_ROOT, str(foto.imagen))
@@ -255,7 +275,6 @@ def control(request):
         response['Content-Disposition'] = 'attachment; filename="exported_data_with_images.zip"'
         return response
       else:
-        # Return JSON data as response
         response = HttpResponse(
           json_data,
           content_type='application/json'
