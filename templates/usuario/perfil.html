@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Perfil de {{ usuario.username }}{% endblock %}
 
 {% block content %}
@@ -27,8 +28,9 @@
         <div class="row">
           {% for foto in fotos %}
             <div class="col-md-4 mb-4">
-              <div class="card">
+              <div class="card" data-photo-id="{{ foto.id }}">
                 <img src="{{ foto.imagen.url }}" class="card-img-top" alt="{{ foto.titulo }}">
+                <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Hide</button>
                 <div class="card-body">
                   <h5 class="card-title">{{ foto.titulo }}</h5>
                   <p class="card-text">{{ foto.descripcion|truncatechars:50 }}</p>
@@ -44,4 +46,5 @@
     </div>
   </div>
 </div>
+<script src="{% static 'js/hide.js' %}"></script>
 {% endblock %}

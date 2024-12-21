@@ -1,6 +1,8 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import registrarUsuario
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
@@ -16,3 +18,5 @@ urlpatterns = [
     path("outbox/<str:username>/", views.activitypub_outbox, name="activitypub_outbox"),
     path('<str:username>/', views.perfil_usuario, name='perfil_usuario'),
 ]
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_URL)

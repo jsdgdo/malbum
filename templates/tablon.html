@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
+{% load static %}
 
 {% block title %}Tablón de Fotos{% endblock %}
 
@@ -42,8 +43,9 @@
             <div class="row">
                 {% for foto in fotos %}
                     <div class="col-md-4 mb-4">
-                        <div class="card">
+                        <div class="card" data-photo-id="{{ foto.id }}">
                             <img src="{{ foto.imagen.url }}" class="card-img-top" alt="{{ foto.alt_descripcion }}">
+                            <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Hide</button>
                             <div class="card-body">
                                 <h5 class="card-title">{{ foto.titulo }}</h5>
                                 <p class="card-text">{{ foto.descripcion|truncatewords:10 }}</p>
@@ -58,4 +60,5 @@
         </div>
     </div>
 </div>
+<script src="{% static 'js/hide.js' %}"></script>
 {% endblock %}
