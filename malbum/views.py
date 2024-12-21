@@ -83,6 +83,7 @@ def tablon(request):
   return render(request, 'tablon.html', context)
 
 def detalle_foto(request, id):
+  hay_usuario = Usuario.objects.exists()
   foto = get_object_or_404(Foto, id=id)
   context = {
       'foto': foto,
@@ -90,7 +91,7 @@ def detalle_foto(request, id):
       'colecciones': foto.colecciones.all() if foto.colecciones.exists() else None,
       'licencia': foto.licencia
   }
-  return render(request, 'detalle_foto.html', {'foto': foto})
+  return render(request, 'detalle_foto.html', {'foto': foto, 'hay_usuario': hay_usuario})
 
 @login_required
 def editar_foto(request, id):
@@ -194,6 +195,7 @@ def handle_import_data(request):
       return False, f'Error al importar datos: {str(e)}'
   return False, 'Solicitud inválida.'
 
+@login_required
 def control(request):
   if request.method == 'POST':
     if 'export_data' in request.POST:

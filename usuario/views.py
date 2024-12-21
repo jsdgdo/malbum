@@ -10,6 +10,8 @@ from malbum.models import Foto
 
 
 def registrarUsuario(request):
+  if Usuario.objects.exists():
+    return redirect('inicio')
   if request.method == "POST":
     form = RegistroUsuarioForm(request.POST, request.FILES)
     if form.is_valid():
@@ -23,6 +25,7 @@ def registrarUsuario(request):
   return render(request, "usuario/registrar.html", {"form": form})
 
 def perfil_usuario(request, username):
+  hay_usuario = Usuario.objects.exists()
   # Get the user or return a 404 if not found
   usuario = get_object_or_404(Usuario, username=username)
   
@@ -31,6 +34,7 @@ def perfil_usuario(request, username):
 
   return render(request, 'usuario/perfil.html', {
     'usuario': usuario,
+    'hay_usuario': hay_usuario,
     'fotos': fotos,
   })
 
