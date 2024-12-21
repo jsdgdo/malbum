@@ -3,7 +3,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .forms import FotoForm, EtiquetaForm, ColeccionForm
-from .models import Foto, Etiqueta, Coleccion
+from .models import Foto, Etiqueta, Coleccion, SolicitudImagen
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.serializers.json import DjangoJSONEncoder
@@ -18,6 +18,11 @@ import zipfile
 from io import BytesIO
 import logging
 from django.contrib.auth import logout
+from django.core.mail import send_mail
+from django.utils import timezone
+import uuid
+from django.contrib import messages
+from django.urls import reverse
 
 def inicio(request):
   if request.user.is_authenticated:
@@ -296,3 +301,96 @@ def importar_datos(request):
     else:
       return JsonResponse({'success': False, 'message': message}, status=400)
   return render(request, 'importar_datos.html')
+
+@require_POST
+def solicitar_imagen(request, foto_id):
+    foto = get_object_or_404(Foto, id=foto_id)
+    email = request.POST.get('email')
+    mensaje = request.POST.get('mensaje')
+    
+    solicitud = SolicitudImagen.objects.create(
+        foto=foto,
+        email_solicitante=email,
+        mensaje=mensaje
+    )
+    
+    # Notificar al dueño de la foto
+    send_mail(
+        f'Nueva solicitud de imagen para "{foto.titulo}"',
+        f'Has recibido una nueva solicitud para la imagen "{foto.titulo}".\n\n'
+        f'Email del solicitante: {email}\n'
+        f'Mensaje: {mensaje}\n\n'
+        f'Puedes gestionar esta solicitud desde tu panel de control.',
+        settings.DEFAULT_FROM_EMAIL,
+        [foto.usuario.email],
+        fail_silently=False,
+    )
+    
+    messages.success(request, 'Solicitud enviada correctamente. El fotógrafo revisará tu petición.')
+    return redirect('detalle_foto', id=foto_id)
+
+@login_required
+def gestionar_solicitudes(request):
+    solicitudes = SolicitudImagen.objects.filter(
+        foto__usuario=request.user
+    ).select_related('foto')
+    
+    return render(request, 'gestionar_solicitudes.html', {
+        'solicitudes': solicitudes
+    })
+
+@login_required
+@require_POST
+def responder_solicitud(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudImagen, id=solicitud_id, foto__usuario=request.user)
+    respuesta = request.POST.get('respuesta')
+    
+    if respuesta == 'aprobar':
+        # Generar URL única para la descarga
+        url_token = str(uuid.uuid4())
+        solicitud.url_descarga = url_token
+        solicitud.estado = 'aprobada'
+        
+        # Enviar email de aprobación
+        send_mail(
+            'Tu solicitud de imagen ha sido aprobada',
+            f'Tu solicitud para la imagen "{solicitud.foto.titulo}" ha sido aprobada.\n\n'
+            f'Puedes descargar la imagen en alta resolución desde el siguiente enlace:\n'
+            f'{request.build_absolute_uri(reverse("descargar_imagen", args=[url_token]))}\n\n'
+            f'Este enlace expirará en 24 horas.',
+            settings.DEFAULT_FROM_EMAIL,
+            [solicitud.email_solicitante],
+            fail_silently=False,
+        )
+    else:
+        solicitud.estado = 'rechazada'
+        # Enviar email de rechazo
+        send_mail(
+            'Respuesta a tu solicitud de imagen',
+            f'Lo sentimos, tu solicitud para la imagen "{solicitud.foto.titulo}" '
+            f'no ha podido ser aprobada en esta ocasión.\n\n'
+            f'Gracias por tu interés.',
+            settings.DEFAULT_FROM_EMAIL,
+            [solicitud.email_solicitante],
+            fail_silently=False,
+        )
+    
+    solicitud.fecha_respuesta = timezone.now()
+    solicitud.save()
+    
+    messages.success(request, 'Respuesta enviada correctamente.')
+    return redirect('gestionar_solicitudes')
+
+def descargar_imagen(request, token):
+    solicitud = get_object_or_404(SolicitudImagen, 
+                                 url_descarga=token, 
+                                 estado='aprobada',
+                                 fecha_respuesta__gte=timezone.now() - timezone.timedelta(days=1))
+    
+    response = HttpResponse(content_type='image/jpeg')
+    response['Content-Disposition'] = f'attachment; filename="{solicitud.foto.imagen.name}"'
+    
+    with open(solicitud.foto.imagen.path, 'rb') as img:
+        response.write(img.read())
+    
+    return response

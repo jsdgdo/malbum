@@ -39,6 +39,10 @@ urlpatterns = [
     path("rss/", FotoFeed(), name="rss_feed"),
     path('control/', control, name='control'),
     path('importar-datos/', importar_datos, name='importar_datos'),
+    path('foto/<int:foto_id>/solicitar/', views.solicitar_imagen, name='solicitar_imagen'),
+    path('solicitudes/', views.gestionar_solicitudes, name='gestionar_solicitudes'),
+    path('solicitud/<int:solicitud_id>/responder/', views.responder_solicitud, name='responder_solicitud'),
+    path('descargar/<str:token>/', views.descargar_imagen, name='descargar_imagen'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestionar Solicitudes de Imágenes{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Solicitudes de Imágenes</h2>
+    
+    {% if not solicitudes %}
+        <p class="text-muted">No hay solicitudes pendientes.</p>
+    {% else %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Imagen</th>
+                        <th>Solicitante</th>
+                        <th>Fecha</th>
+                        <th>Mensaje</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in solicitudes %}
+                        <tr>
+                            <td>
+                                <img src="{{ solicitud.foto.get_thumbnail_url }}" 
+                                     alt="{{ solicitud.foto.titulo }}" 
+                                     style="width: 100px; height: 100px; object-fit: cover;">
+                            </td>
+                            <td>{{ solicitud.email_solicitante }}</td>
+                            <td>{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</td>
+                            <td>{{ solicitud.mensaje|truncatechars:50 }}</td>
+                            <td>
+                                <span class="badge {% if solicitud.estado == 'pendiente' %}bg-warning
+                                                  {% elif solicitud.estado == 'aprobada' %}bg-success
+                                                  {% else %}bg-danger{% endif %}">
+                                    {{ solicitud.get_estado_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if solicitud.estado == 'pendiente' %}
+                                    <form method="post" action="{% url 'responder_solicitud' solicitud.id %}" 
+                                          class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="respuesta" value="aprobar">
+                                        <button type="submit" class="btn btn-sm btn-success">Aprobar</button>
+                                    </form>
+                                    <form method="post" action="{% url 'responder_solicitud' solicitud.id %}" 
+                                          class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="respuesta" value="rechazar">
+                                        <button type="submit" class="btn btn-sm btn-danger">Rechazar</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

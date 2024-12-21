@@ -59,6 +59,31 @@
         </li>
     </ul>
 
+    <div class="mt-4">
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" 
+                data-bs-target="#solicitudImagen" aria-expanded="false">
+            Solicitar imagen en alta resolución
+        </button>
+        
+        <div class="collapse mt-3" id="solicitudImagen">
+            <div class="card card-body">
+                <form method="post" action="{% url 'solicitar_imagen' foto.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mensaje" class="form-label">Mensaje para el fotógrafo</label>
+                        <textarea class="form-control" id="mensaje" name="mensaje" rows="3" 
+                                  placeholder="Por favor, explique para qué utilizará la imagen..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enviar solicitud</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {% if user.is_authenticated and user == foto.usuario or user.is_superuser %}
         <div class="text-center mt-4">
             <a href="{% url 'editar_foto' foto.id %}" class="btn btn-primary">

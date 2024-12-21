@@ -5,60 +5,76 @@
 <div class="container mt-5">
   <h2 class="text-center">Panel de Control</h2>
 
-  <h3>Configuraciones</h3>
-  <form method="post">
-    {% csrf_token %}
-    <input type="hidden" name="update_settings" value="1">
-    <div class="form-group">
-      <label for="domain">Dominio</label>
-      <input type="text" id="domain" name="domain" class="form-control" placeholder="https://tu-dominio.com" value="{{ request.get_host }}">
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h3>Solicitudes de Imágenes</h3>
+          <p>Gestiona las solicitudes de imágenes en alta resolución.</p>
+          <a href="{% url 'gestionar_solicitudes' %}" class="btn btn-primary">
+            Ver Solicitudes
+          </a>
+        </div>
+      </div>
     </div>
-    <br>
-    <div class="form-group">
-      <label for="activity_pub_key">Clave para ActivityPub</label>
-      <textarea id="activity_pub_key" name="activity_pub_key" class="form-control" placeholder="Pegue su clave aquí"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary mt-3">Guardar Configuraciones</button>
-  </form>
-  <br>
-  <hr>
 
-  <h3>Exportar Datos</h3>
-  <form method="post">
-    {% csrf_token %}
-    <input type="hidden" name="export_data" value="1">
-    <div class="form-group">
-      <label for="include_images">¿Incluir imágenes en la exportación?</label>
-      <select name="include_images" id="include_images" class="form-control">
-        <option value="false">No</option>
-        <option value="true">Sí</option>
-      </select>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h3>Configuraciones</h3>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="update_settings" value="1">
+            <div class="form-group">
+              <label for="domain">Dominio</label>
+              <input type="text" id="domain" name="domain" class="form-control" placeholder="https://tu-dominio.com" value="{{ request.get_host }}">
+            </div>
+            <br>
+            <div class="form-group">
+              <label for="activity_pub_key">Clave para ActivityPub</label>
+              <textarea id="activity_pub_key" name="activity_pub_key" class="form-control" placeholder="Pegue su clave aquí"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Guardar Configuraciones</button>
+          </form>
+        </div>
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary mt-2">Exportar Datos</button>
-  </form>
-  <br>
+  </div>
 
-  <h3>Reiniciar Instalación</h3>
-  <div class="card border-danger mb-4">
-    <div class="card-body">
-      <h5 class="card-title text-danger">Zona de Peligro</h5>
-      <p class="card-text">
-        Esta acción eliminará todos los datos de la aplicación, incluyendo:
-        <ul>
-          <li>Todos los usuarios</li>
-          <li>Todas las fotos y sus archivos</li>
-          <li>Todas las etiquetas y colecciones</li>
-          <li>Todas las imágenes de perfil</li>
-        </ul>
-        Esta acción no se puede deshacer.
-      </p>
-      <form method="post" onsubmit="return confirm('¿Estás seguro? Esta acción eliminará TODOS los datos y no se puede deshacer.');">
-        {% csrf_token %}
-        <input type="hidden" name="reset_installation" value="1">
-        <button type="submit" class="btn btn-danger">
-          <i class="fas fa-exclamation-triangle"></i> Reiniciar Instalación
-        </button>
-      </form>
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h3>Exportar Datos</h3>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="export_data" value="1">
+            <div class="form-group">
+              <label for="include_images">¿Incluir imágenes en la exportación?</label>
+              <select name="include_images" id="include_images" class="form-control">
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Exportar Datos</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-danger">
+        <div class="card-body">
+          <h3 class="text-danger">Zona de Peligro</h3>
+          <form method="post" onsubmit="return confirm('¿Estás seguro? Esta acción eliminará TODOS los datos y no se puede deshacer.');">
+            {% csrf_token %}
+            <input type="hidden" name="reset_installation" value="1">
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-exclamation-triangle"></i> Reiniciar Instalación
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </div>

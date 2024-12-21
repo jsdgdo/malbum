@@ -73,3 +73,28 @@ class Coleccion(models.Model):
 
   def __str__(self):
     return self.titulo
+
+class SolicitudImagen(models.Model):
+    foto = models.ForeignKey(Foto, on_delete=models.CASCADE, related_name='solicitudes')
+    email_solicitante = models.EmailField(verbose_name="Email del solicitante")
+    mensaje = models.TextField(verbose_name="Mensaje")
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(
+        max_length=20,
+        choices=[
+            ('pendiente', 'Pendiente'),
+            ('aprobada', 'Aprobada'),
+            ('rechazada', 'Rechazada')
+        ],
+        default='pendiente'
+    )
+    url_descarga = models.CharField(max_length=255, blank=True, null=True)
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Solicitud de imagen"
+        verbose_name_plural = "Solicitudes de imágenes"
+        ordering = ['-fecha_solicitud']
+
+    def __str__(self):
+        return f"Solicitud de {self.email_solicitante} para {self.foto.titulo}"
