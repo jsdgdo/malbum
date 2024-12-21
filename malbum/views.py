@@ -17,6 +17,7 @@ import os
 import zipfile
 from io import BytesIO
 import logging
+from django.contrib.auth import logout
 
 def inicio(request):
   if request.user.is_authenticated:
@@ -198,7 +199,35 @@ def handle_import_data(request):
 @login_required
 def control(request):
   if request.method == 'POST':
-    if 'export_data' in request.POST:
+    if 'reset_installation' in request.POST:
+      # Delete all data
+      with connection.cursor() as cursor:
+        # Disable foreign key checks temporarily
+        cursor.execute('SET FOREIGN_KEY_CHECKS = 0;')
+        
+        # Clear all tables
+        Usuario.objects.all().delete()
+        Foto.objects.all().delete()
+        Etiqueta.objects.all().delete()
+        Coleccion.objects.all().delete()
+        
+        # Re-enable foreign key checks
+        cursor.execute('SET FOREIGN_KEY_CHECKS = 1;')
+      
+      # Clear media files
+      import shutil
+      media_root = settings.MEDIA_ROOT
+      for dir_name in ['fotos', 'profile_pics']:
+        dir_path = os.path.join(media_root, dir_name)
+        if os.path.exists(dir_path):
+          shutil.rmtree(dir_path)
+          os.makedirs(dir_path)
+      
+      # Logout the current user
+      logout(request)
+      return redirect('splash')
+    
+    elif 'export_data' in request.POST:
       include_images = request.POST.get('include_images', 'false') == 'true'
 
       # Prepare data for export
