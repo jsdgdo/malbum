@@ -221,6 +221,7 @@ def handle_import_data(request):
 def control(request):
   if request.method == 'POST':
     if 'reset_installation' in request.POST:
+      SolicitudImagen.objects.all().delete()
       Foto.objects.all().delete()
       Etiqueta.objects.all().delete()
       Coleccion.objects.all().delete()
