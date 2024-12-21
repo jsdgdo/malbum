@@ -32,10 +32,10 @@ function applyHiddenState() {
 
     if (hiddenPhotos.includes(photoId)) {
       container.classList.add('blurred');
-      container.querySelector('.hide-button').innerText = 'Show';
+      container.querySelector('.hide-button').innerText = 'Mostrar';
     } else {
       container.classList.remove('blurred');
-      container.querySelector('.hide-button').innerText = 'Hide';
+      container.querySelector('.hide-button').innerText = 'Ocultar';
     }
   });
 }

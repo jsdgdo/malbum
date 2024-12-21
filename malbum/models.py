@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from PIL import Image, ExifTags
+from .utils import get_sized_image_url
 
 class Foto(models.Model):
   titulo = models.CharField(max_length=255, verbose_name="Título")
@@ -21,11 +22,24 @@ class Foto(models.Model):
   etiquetas = models.ManyToManyField('Etiqueta', blank=True, related_name="fotos", verbose_name="Etiquetas")
   colecciones = models.ManyToManyField('Coleccion', blank=True, related_name="fotos", verbose_name="Colecciones")
 
+  def get_thumbnail_url(self):
+    return get_sized_image_url(self.imagen, 'thumbnail')
+    
+  def get_medium_url(self):
+    return get_sized_image_url(self.imagen, 'medium')
+    
+  def get_original_url(self):
+    return get_sized_image_url(self.imagen, 'original')
+
   def save(self, *args, **kwargs):
     super(Foto, self).save(*args, **kwargs)
     self.extract_exif_data()
     if self._state.adding is False:
       super(Foto, self).save(update_fields=['camara', 'lente', 'configuracion'])
+    # Generate resized versions after saving
+    if self.imagen:
+      from .utils import ensure_image_sizes
+      ensure_image_sizes(self.imagen.path)
   
   def extract_exif_data(self):
     try:

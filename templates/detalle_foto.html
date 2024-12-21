@@ -11,10 +11,13 @@
             <p class="warning-text">Advertencia de contenido</p>
             <button id="toggle-blur" class="btn btn-warning">Mostrar contenido</button>
         </div>
-        <img src="{{ foto.imagen.url }}" alt="{{ foto.alt_descripcion }}" class="img-fluid mb-3">
+        <img src="{{ foto.get_medium_url }}" 
+             alt="{{ foto.alt_descripcion }}" 
+             class="img-fluid mb-3"
+             loading="lazy">
     </div>
     <p class="mt-3">{% if foto.descripcion %}{{ foto.descripcion }}{% else %}Sin descripción{% endif %}</p>
-    <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Hide</button>
+    <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Ocultar</button>
 
     <h4>Detalles</h4>
     <ul class="list-group">

@@ -8,7 +8,7 @@
     <!-- Profile Header -->
     <div class="col-md-3 text-center">
       {% if usuario.fotoDePerfil %}
-        <img src="{{ usuario.fotoDePerfil.url }}" class="img-thumbnail rounded-circle" alt="Avatar de {{ usuario.username }}" style="width: 150px; height: 150px;">
+        <img src="{{ usuario.fotoDePerfil.url }}" class="img-thumbnail rounded-circle" alt="Avatar de {{ usuario.username }}" style="width: 150px; height: 150px;" loading="lazy">
       {% else %}
         <img src="https://via.placeholder.com/150" class="img-thumbnail rounded-circle" alt="Avatar predeterminado">
       {% endif %}
@@ -29,8 +29,8 @@
           {% for foto in fotos %}
             <div class="col-md-4 mb-4">
               <div class="card" data-photo-id="{{ foto.id }}">
-                <img src="{{ foto.imagen.url }}" class="card-img-top" alt="{{ foto.titulo }}">
-                <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Hide</button>
+                <img src="{{ foto.get_thumbnail_url }}" class="card-img-top" alt="{{ foto.titulo }}" loading="lazy">
+                <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Ocultar</button>
                 <div class="card-body">
                   <h5 class="card-title">{{ foto.titulo }}</h5>
                   <p class="card-text">{{ foto.descripcion|truncatechars:50 }}</p>

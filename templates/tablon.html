@@ -44,8 +44,11 @@
                 {% for foto in fotos %}
                     <div class="col-md-4 mb-4">
                         <div class="card" data-photo-id="{{ foto.id }}">
-                            <img src="{{ foto.imagen.url }}" class="card-img-top" alt="{{ foto.alt_descripcion }}">
-                            <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Hide</button>
+                            <img src="{{ foto.get_thumbnail_url }}" 
+                                 class="card-img-top" 
+                                 alt="{{ foto.alt_descripcion }}"
+                                 loading="lazy">
+                            <button class="hide-button" onclick="toggleHidden('{{ foto.id }}')">Ocultar</button>
                             <div class="card-body">
                                 <h5 class="card-title">{{ foto.titulo }}</h5>
                                 <p class="card-text">{{ foto.descripcion|truncatewords:10 }}</p>
