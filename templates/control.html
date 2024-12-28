@@ -27,12 +27,17 @@
             <input type="hidden" name="update_settings" value="1">
             <div class="form-group">
               <label for="domain">Dominio</label>
-              <input type="text" id="domain" name="domain" class="form-control" placeholder="https://tu-dominio.com" value="{{ request.get_host }}">
+              <input type="text" id="domain" name="domain" class="form-control" placeholder="ejemplo.com" value="{{ dominio }}">
+              <small class="form-text text-muted">
+                El dominio donde está alojada la instancia (sin http:// o https://)
+              </small>
             </div>
-            <br>
-            <div class="form-group">
-              <label for="activity_pub_key">Clave para ActivityPub</label>
-              <textarea id="activity_pub_key" name="activity_pub_key" class="form-control" placeholder="Pegue su clave aquí"></textarea>
+            <div class="form-group mt-3">
+              <label for="activity_pub_key">Clave pública ActivityPub</label>
+              <textarea id="activity_pub_key" name="activity_pub_key" class="form-control" rows="5" placeholder="-----BEGIN PUBLIC KEY-----">{{ clave_activitypub }}</textarea>
+              <small class="form-text text-muted">
+                Clave pública para firmar actividades ActivityPub
+              </small>
             </div>
             <button type="submit" class="btn btn-primary mt-3">Guardar Configuraciones</button>
           </form>

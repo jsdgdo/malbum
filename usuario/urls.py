@@ -4,6 +4,7 @@ from .views import registrarUsuario
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+from . import activitypub
 
 urlpatterns = [
     path('registrar/', registrarUsuario, name="registrarUsuario"),
@@ -17,6 +18,7 @@ urlpatterns = [
     path("inbox/<str:username>/", views.activitypub_inbox, name="activitypub_inbox"),
     path("outbox/<str:username>/", views.activitypub_outbox, name="activitypub_outbox"),
     path('<str:username>/', views.perfil_usuario, name='perfil_usuario'),
+    path('.well-known/webfinger', activitypub.webfinger, name='webfinger'),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_URL)

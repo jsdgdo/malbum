@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from .models import Usuario
 from malbum.models import Foto
+from malbum.config import get_default_config, save_config
 
 
 def registrarUsuario(request):
@@ -15,7 +16,15 @@ def registrarUsuario(request):
   if request.method == "POST":
     form = RegistroUsuarioForm(request.POST, request.FILES)
     if form.is_valid():
-      usuario = form.save()
+      usuario = form.save(commit=False)
+      usuario.is_staff = True
+      usuario.save()
+      
+      # Create initial config.json
+      initial_config = get_default_config()
+      initial_config['dominio'] = request.get_host()  # Set default domain from request
+      save_config(initial_config)
+      
       login(request, usuario)
       return redirect("inicio")
     else: 

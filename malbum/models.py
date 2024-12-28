@@ -98,3 +98,30 @@ class SolicitudImagen(models.Model):
 
     def __str__(self):
         return f"Solicitud de {self.email_solicitante} para {self.foto.titulo}"
+
+class Configuracion(models.Model):
+    clave = models.CharField(max_length=100, unique=True)
+    valor = models.TextField()
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuración"
+        verbose_name_plural = "Configuraciones"
+
+    def __str__(self):
+        return self.clave
+
+    @classmethod
+    def get_valor(cls, clave, default=None):
+        try:
+            return cls.objects.get(clave=clave).valor
+        except cls.DoesNotExist:
+            return default
+
+    @classmethod
+    def set_valor(cls, clave, valor):
+        obj, created = cls.objects.update_or_create(
+            clave=clave,
+            defaults={'valor': valor}
+        )
+        return obj

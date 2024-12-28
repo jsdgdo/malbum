@@ -1,6 +1,8 @@
 asgiref==3.8.1
+cffi==1.17.1
+cryptography==44.0.0
 Django==5.0.7
-django-widget-tweaks==1.4.12
-setuptools>=40.0.0
+django-widget-tweaks==1.5.0
 pillow==10.4.0
+pycparser==2.22
 sqlparse==0.5.1
