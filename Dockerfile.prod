@@ -59,6 +59,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip uninstall -y pillow && \
     pip install --no-cache-dir --no-binary :all: pillow
 
+# Create media directory and set permissions
+RUN mkdir -p /code/media /code/media/fotos /code/media/profile_pics && \
+    chown -R www-data:www-data /code/media && \
+    chmod -R 775 /code/media
+
 EXPOSE 80 443
 
 ENTRYPOINT ["/code/entrypoint.sh"]
