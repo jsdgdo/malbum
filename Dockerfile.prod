@@ -1,6 +1,6 @@
-## Para usar este, correr `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up`
+## Para usar este, correr `docker-compose -f docker-compose-prod.yml up`
 
-FROM python:3.x
+FROM python:3.12
 
 # Install Apache and mod_wsgi
 RUN apt-get update && apt-get install -y \

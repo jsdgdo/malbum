@@ -1,6 +1,6 @@
 ## Para usar este correr `docker-compose up`
 
-FROM python:3.x
+FROM python:3.12
 
 ENV PYTHONBUFFERED=1
 

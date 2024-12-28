@@ -1,4 +1,4 @@
-## Para usar este correr `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up`
+## Para usar este, correr `docker-compose -f docker-compose-prod.yml up`
 services:
   web:
     build:
