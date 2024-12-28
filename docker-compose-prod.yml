@@ -1,6 +1,4 @@
 ## Para usar este, correr `docker-compose -f docker-compose-prod.yml up`
-version: '3'
-
 services:
   web:
     build:
