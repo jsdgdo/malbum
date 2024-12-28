@@ -1,6 +1,8 @@
 ## Para usar este correr `docker-compose up`
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     ports:
       - "8080:8080"
