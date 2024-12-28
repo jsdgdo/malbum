@@ -2,11 +2,10 @@
 
 FROM python:3.12
 
-# Install Apache, mod_wsgi and Pillow dependencies
+# Install Apache and Pillow dependencies
 RUN apt-get update && apt-get install -y \
     apache2 \
     apache2-dev \
-    libapache2-mod-wsgi-py3 \
     # Pillow dependencies
     libjpeg-dev \
     zlib1g-dev \
@@ -14,8 +13,15 @@ RUN apt-get update && apt-get install -y \
     python3-pil \
     python3-pil.imagetk \
     && a2enmod ssl \
-    && a2enmod wsgi \
     && a2enmod rewrite
+
+# Install mod_wsgi via pip
+RUN pip install mod_wsgi
+
+# Configure mod_wsgi
+RUN mod_wsgi-express install-module
+RUN echo "LoadModule wsgi_module $(find /usr/lib/apache2/modules/ -name 'mod_wsgi*.so')" > /etc/apache2/mods-available/wsgi.load
+RUN a2enmod wsgi
 
 # Copy SSL certificates
 COPY ./certs/certificate.cer /etc/ssl/certs/
