@@ -1,5 +1,9 @@
 #!/bin/sh
 
+mkdir -p /code/media/fotos /code/media/profile_pics
+chown -R www-data:www-data /code/media
+chmod -R 775 /code/media
+
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
