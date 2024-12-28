@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
     && a2enmod wsgi
 
 # Copy SSL certificates
-COPY ./certs/certificate.crt /etc/ssl/certs/
-COPY ./certs/private.key /etc/ssl/private/
+COPY ./certs/* /etc/ssl/certs/
+COPY ./certs/*.key /etc/ssl/private/
 
 # Copy Apache configuration
 COPY ./apache-config.conf /etc/apache2/sites-available/001-malbum.conf
