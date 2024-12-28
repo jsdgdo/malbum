@@ -23,6 +23,7 @@ from django.utils import timezone
 import uuid
 from django.contrib import messages
 from django.urls import reverse
+from django.db.models import Q
 
 def inicio(request):
   if request.user.is_authenticated:
@@ -395,3 +396,76 @@ def descargar_imagen(request, token):
         response.write(img.read())
     
     return response
+
+@login_required
+def gestionar_colecciones(request):
+    colecciones = Coleccion.objects.filter(usuario=request.user)
+    coleccion_actual = None
+    
+    if request.method == 'POST':
+        # Crear nueva colección
+        titulo = request.POST.get('titulo')
+        descripcion = request.POST.get('descripcion')
+        if titulo:
+            coleccion = Coleccion.objects.create(
+                titulo=titulo,
+                descripcion=descripcion,
+                usuario=request.user
+            )
+            return redirect('gestionar_colecciones')
+    
+    # Obtener colección seleccionada
+    coleccion_id = request.GET.get('coleccion_id')
+    if coleccion_id:
+        coleccion_actual = get_object_or_404(Coleccion, id=coleccion_id, usuario=request.user)
+    
+    return render(request, 'colecciones.html', {
+        'colecciones': colecciones,
+        'coleccion_actual': coleccion_actual
+    })
+
+@login_required
+def buscar_fotos(request):
+    query = request.GET.get('q', '')
+    if len(query) >= 2:
+        fotos = Foto.objects.filter(
+            usuario=request.user
+        ).filter(
+            Q(titulo__icontains=query) | 
+            Q(descripcion__icontains=query)
+        )[:10]  # Limitar a 10 resultados
+        
+        resultados = [{
+            'id': foto.id,
+            'titulo': foto.titulo,
+            'thumbnail_url': foto.get_thumbnail_url()
+        } for foto in fotos]
+        
+        return JsonResponse({'fotos': resultados})
+    return JsonResponse({'fotos': []})
+
+@login_required
+@require_POST
+def agregar_foto_coleccion(request):
+    data = json.loads(request.body)
+    foto_id = data.get('foto_id')
+    coleccion_id = data.get('coleccion_id')
+    
+    coleccion = get_object_or_404(Coleccion, id=coleccion_id, usuario=request.user)
+    foto = get_object_or_404(Foto, id=foto_id, usuario=request.user)
+    
+    coleccion.fotos.add(foto)
+    return JsonResponse({'success': True})
+
+@login_required
+@require_POST
+def quitar_foto_coleccion(request):
+    data = json.loads(request.body)
+    foto_id = data.get('foto_id')
+    coleccion_id = data.get('coleccion_id')
+    
+    coleccion = get_object_or_404(Coleccion, id=coleccion_id, usuario=request.user)
+    foto = get_object_or_404(Foto, id=foto_id, usuario=request.user)
+    
+    coleccion.fotos.remove(foto)
+    return JsonResponse({'success': True})

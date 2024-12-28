@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestionar Colecciones{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Lista de Colecciones -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Mis Colecciones</h3>
+                    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#nuevaColeccionModal">
+                        Nueva Colección
+                    </button>
+                    <div class="list-group">
+                        {% for coleccion in colecciones %}
+                            <a href="?coleccion_id={{ coleccion.id }}" 
+                               class="list-group-item list-group-item-action {% if coleccion_actual.id == coleccion.id %}active{% endif %}">
+                                {{ coleccion.titulo }}
+                                <span class="badge bg-secondary float-end">{{ coleccion.fotos.count }}</span>
+                            </a>
+                        {% empty %}
+                            <p class="text-muted">No hay colecciones creadas.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detalles de la Colección -->
+        <div class="col-md-8">
+            {% if coleccion_actual %}
+                <div class="card">
+                    <div class="card-body">
+                        <h3>{{ coleccion_actual.titulo }}</h3>
+                        <p>{{ coleccion_actual.descripcion }}</p>
+                        
+                        <h4 class="mt-4">Fotos en esta colección</h4>
+                        <div class="row">
+                            {% for foto in coleccion_actual.fotos.all %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="{{ foto.get_thumbnail_url }}" class="card-img-top" alt="{{ foto.titulo }}">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ foto.titulo }}</h5>
+                                            <button class="btn btn-danger btn-sm" 
+                                                    onclick="quitarFoto('{{ foto.id }}', '{{ coleccion_actual.id }}')">
+                                                Quitar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <h4 class="mt-4">Agregar fotos</h4>
+                        <div class="mb-3">
+                            <input type="text" id="buscarFotos" class="form-control" 
+                                   placeholder="Buscar fotos por título o descripción...">
+                        </div>
+                        <div id="resultadosBusqueda" class="row">
+                            <!-- Aquí se mostrarán los resultados de la búsqueda -->
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted">Selecciona una colección para ver sus detalles.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Colección -->
+<div class="modal fade" id="nuevaColeccionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Colección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nuevaColeccionForm" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="titulo" class="form-label">Título</label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="nuevaColeccionForm" class="btn btn-primary">Crear</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buscarInput = document.getElementById('buscarFotos');
+    const resultadosDiv = document.getElementById('resultadosBusqueda');
+    let timeoutId;
+
+    buscarInput.addEventListener('input', function() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            const query = this.value;
+            if (query.length >= 2) {
+                buscarFotos(query);
+            } else {
+                resultadosDiv.innerHTML = '';
+            }
+        }, 300);
+    });
+});
+
+function buscarFotos(query) {
+    fetch(`{% url 'buscar_fotos' %}?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            const resultadosDiv = document.getElementById('resultadosBusqueda');
+            resultadosDiv.innerHTML = data.fotos.map(foto => `
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="${foto.thumbnail_url}" class="card-img-top" alt="${foto.titulo}">
+                        <div class="card-body">
+                            <h5 class="card-title">${foto.titulo}</h5>
+                            <button class="btn btn-primary btn-sm" 
+                                    onclick="agregarFoto('${foto.id}', '{{ coleccion_actual.id }}')">
+                                Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        });
+}
+
+function agregarFoto(fotoId, coleccionId) {
+    fetch('{% url "agregar_foto_coleccion" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ foto_id: fotoId, coleccion_id: coleccionId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function quitarFoto(fotoId, coleccionId) {
+    if (confirm('¿Estás seguro de querer quitar esta foto de la colección?')) {
+        fetch('{% url "quitar_foto_coleccion" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ foto_id: fotoId, coleccion_id: coleccionId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

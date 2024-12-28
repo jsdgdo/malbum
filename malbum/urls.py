@@ -43,6 +43,10 @@ urlpatterns = [
     path('solicitudes/', views.gestionar_solicitudes, name='gestionar_solicitudes'),
     path('solicitud/<int:solicitud_id>/responder/', views.responder_solicitud, name='responder_solicitud'),
     path('descargar/<str:token>/', views.descargar_imagen, name='descargar_imagen'),
+    path('colecciones/', views.gestionar_colecciones, name='gestionar_colecciones'),
+    path('colecciones/buscar-fotos/', views.buscar_fotos, name='buscar_fotos'),
+    path('colecciones/agregar-foto/', views.agregar_foto_coleccion, name='agregar_foto_coleccion'),
+    path('colecciones/quitar-foto/', views.quitar_foto_coleccion, name='quitar_foto_coleccion'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
