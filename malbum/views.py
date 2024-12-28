@@ -114,132 +114,122 @@ def editar_foto(request, id):
   return render(request, 'subir_foto.html', {'form': form, 'foto': foto})
 
 def handle_import_data(request):
-  if request.method == 'POST' and request.FILES.get('data_file'):
-    try:
-        data_file = request.FILES['data_file']
-        logging.warning(f"Uploaded file: {data_file.name}, Size: {data_file.size} bytes")
-
-        # Store current config before import
-        current_config = None
+    if request.method == 'POST' and request.FILES.get('data_file'):
         try:
-            current_config = {
-                'dominio': get_valor('dominio'),
-                'clave_activitypub': get_valor('clave_activitypub')
-            }
-        except Exception:
-            pass
+            data_file = request.FILES['data_file']
+            logging.warning(f"Uploaded file: {data_file.name}, Size: {data_file.size} bytes")
 
-        if zipfile.is_zipfile(data_file):
-            print("Detected a ZIP file")
-            with zipfile.ZipFile(data_file) as z:
-                
-                json_filename = next((name for name in z.namelist() if name.endswith('.json')), None)
-                if not json_filename:
-                    raise ValueError("El archivo ZIP no contiene un archivo JSON válido.")
+            if zipfile.is_zipfile(data_file):
+                print("Detected a ZIP file")
+                with zipfile.ZipFile(data_file) as z:
+                    # Look for config.json in the ZIP
+                    config_filename = next((name for name in z.namelist() if name.endswith('config.json')), None)
+                    if config_filename:
+                        with z.open(config_filename) as config_file:
+                            config_content = config_file.read().decode('utf-8')
+                            save_config(json.loads(config_content))
+                    
+                    # Look for the data JSON file
+                    json_filename = next((name for name in z.namelist() if name.endswith('.json') and name != 'config.json'), None)
+                    if not json_filename:
+                        raise ValueError("El archivo ZIP no contiene un archivo JSON válido.")
 
-                print(f"Found JSON file in ZIP: {json_filename}")
-                with z.open(json_filename) as json_file:
-                    json_content = json_file.read().decode('utf-8')
-                    data = json.loads(json_content)
+                    print(f"Found JSON file in ZIP: {json_filename}")
+                    with z.open(json_filename) as json_file:
+                        json_content = json_file.read().decode('utf-8')
+                        data = json.loads(json_content)
 
-                for file_name in z.namelist():
-                    if file_name.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                        print(f"Extracting image: {file_name}")
-                        with z.open(file_name) as img_file:
-                            img_path = os.path.join('fotos', os.path.basename(file_name))
-                            default_storage.save(img_path, img_file)
-        else:
-            logging.warning("Processing plain JSON file")
-            data_file.seek(0)
-            json_content = data_file.read().decode('utf-8').strip()
-            logging.warning(f"First 200 characters of JSON content: {json_content[:200]}")
+                    for file_name in z.namelist():
+                        if file_name.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                            print(f"Extracting image: {file_name}")
+                            with z.open(file_name) as img_file:
+                                img_path = os.path.join('fotos', os.path.basename(file_name))
+                                default_storage.save(img_path, img_file)
+            else:
+                logging.warning("Processing plain JSON file")
+                data_file.seek(0)
+                json_content = data_file.read().decode('utf-8').strip()
+                logging.warning(f"First 200 characters of JSON content: {json_content[:200]}")
 
-            if not json_content:
-                raise ValueError("El archivo JSON está vacío.")
+                if not json_content:
+                    raise ValueError("El archivo JSON está vacío.")
 
-            data = json.loads(json_content)
+                data = json.loads(json_content)
 
-        Foto.objects.all().delete()
-        Etiqueta.objects.all().delete()
-        Coleccion.objects.all().delete()
-        Usuario.objects.all().delete()
+            # Process the imported data
+            Foto.objects.all().delete()
+            Etiqueta.objects.all().delete()
+            Coleccion.objects.all().delete()
+            Usuario.objects.all().delete()
 
-        user_id_map = {}
+            user_id_map = {}
 
-        for user_data in data.get('usuarios', []):
-            print(f"Importing user: {user_data['username']}")
-            old_id = user_data.get('id')  # Get the old ID
-            user = Usuario(
-                username=user_data['username'],
-                email=user_data['email'],
-                is_staff=user_data['is_staff'],
-                is_active=user_data['is_active'],
-                is_superuser=user_data['is_superuser'],
-                date_joined=user_data['date_joined'],
-                nombreCompleto=user_data.get('nombreCompleto', ''),
-                bio=user_data.get('bio', '')
-            )
-            user.password = user_data['password']
-            user.save()
-            if old_id:
-                user_id_map[old_id] = user.id
-
-        for etiqueta_data in data.get('etiquetas', []):
-            print(f"Importing etiqueta: {etiqueta_data['nombre']}")
-            Etiqueta.objects.create(nombre=etiqueta_data['nombre'])
-
-        for coleccion_data in data.get('colecciones', []):
-            print(f"Importing coleccion: {coleccion_data['titulo']}")
-            old_user_id = coleccion_data['usuario_id']
-            new_user_id = user_id_map.get(old_user_id)
-            if new_user_id:
-                usuario = Usuario.objects.get(id=new_user_id)
-                Coleccion.objects.create(
-                    titulo=coleccion_data['titulo'],
-                    descripcion=coleccion_data['descripcion'],
-                    usuario=usuario
+            for user_data in data.get('usuarios', []):
+                print(f"Importing user: {user_data['username']}")
+                old_id = user_data.get('id')
+                user = Usuario(
+                    username=user_data['username'],
+                    email=user_data['email'],
+                    is_staff=user_data['is_staff'],
+                    is_active=user_data['is_active'],
+                    is_superuser=user_data['is_superuser'],
+                    date_joined=user_data['date_joined'],
+                    nombreCompleto=user_data.get('nombreCompleto', ''),
+                    bio=user_data.get('bio', '')
                 )
+                user.password = user_data['password']
+                user.save()
+                if old_id:
+                    user_id_map[old_id] = user.id
 
-        for foto_data in data.get('fotos', []):
-            print(f"Importing foto: {foto_data['titulo']}")
-            old_user_id = foto_data['usuario_id']
-            new_user_id = user_id_map.get(old_user_id)
-            if new_user_id:
-                usuario = Usuario.objects.get(id=new_user_id)
-                Foto.objects.create(
-                    titulo=foto_data['titulo'],
-                    descripcion=foto_data['descripcion'],
-                    alt_descripcion=foto_data['alt_descripcion'],
-                    licencia=foto_data['licencia'],
-                    advertencia_contenido=foto_data['advertencia_contenido'],
-                    camara=foto_data['camara'],
-                    lente=foto_data['lente'],
-                    configuracion=foto_data['configuracion'],
-                    usuario=usuario,
-                    imagen=f"fotos/{os.path.basename(foto_data.get('imagen', ''))}"
-                )
+            for etiqueta_data in data.get('etiquetas', []):
+                print(f"Importing etiqueta: {etiqueta_data['nombre']}")
+                Etiqueta.objects.create(nombre=etiqueta_data['nombre'])
 
-        # After successful import, restore or initialize config
-        if current_config:
-            # Restore previous config if it existed
-            save_config(current_config)
-        else:
-            # Create new config if none existed
-            initial_config = get_default_config()
-            initial_config['dominio'] = request.get_host()
-            save_config(initial_config)
+            for coleccion_data in data.get('colecciones', []):
+                print(f"Importing coleccion: {coleccion_data['titulo']}")
+                old_user_id = coleccion_data['usuario_id']
+                new_user_id = user_id_map.get(old_user_id)
+                if new_user_id:
+                    usuario = Usuario.objects.get(id=new_user_id)
+                    Coleccion.objects.create(
+                        titulo=coleccion_data['titulo'],
+                        descripcion=coleccion_data['descripcion'],
+                        usuario=usuario
+                    )
 
-        return True, 'Datos importados exitosamente.'
-        
-    except Exception as e:
-        print(f"Error during import: {e}")
-        # Make sure we have a valid config even if import fails
-        if not get_valor('dominio'):
-            initial_config = get_default_config()
-            initial_config['dominio'] = request.get_host()
-            save_config(initial_config)
-        return False, str(e)
-  return False, 'Solicitud inválida.'
+            for foto_data in data.get('fotos', []):
+                print(f"Importing foto: {foto_data['titulo']}")
+                old_user_id = foto_data['usuario_id']
+                new_user_id = user_id_map.get(old_user_id)
+                if new_user_id:
+                    usuario = Usuario.objects.get(id=new_user_id)
+                    Foto.objects.create(
+                        titulo=foto_data['titulo'],
+                        descripcion=foto_data['descripcion'],
+                        alt_descripcion=foto_data['alt_descripcion'],
+                        licencia=foto_data['licencia'],
+                        advertencia_contenido=foto_data['advertencia_contenido'],
+                        camara=foto_data['camara'],
+                        lente=foto_data['lente'],
+                        configuracion=foto_data['configuracion'],
+                        usuario=usuario,
+                        imagen=f"fotos/{os.path.basename(foto_data.get('imagen', ''))}"
+                    )
+
+            # If no config.json was found or imported, ensure we have defaults
+            if not get_valor('dominio'):
+                initial_config = get_default_config()
+                initial_config['dominio'] = request.get_host()
+                save_config(initial_config)
+
+            return True, 'Datos importados exitosamente.'
+            
+        except Exception as e:
+            print(f"Error during import: {e}")
+            return False, str(e)
+
+    return False, 'Solicitud inválida.'
 
 @login_required
 def control(request):
@@ -280,7 +270,7 @@ def control(request):
             return redirect('splash')
         
         elif 'export_data' in request.POST:
-            include_images = request.POST.get('include_images', 'false') == 'true'
+            include_images = request.POST.get('include_images') == 'true'
 
             data = {
                 'usuarios': [{
@@ -306,9 +296,12 @@ def control(request):
             json_data = json.dumps(data, ensure_ascii=False, indent=4, cls=DjangoJSONEncoder)
 
             if include_images:
-
                 buffer = BytesIO()
                 with zipfile.ZipFile(buffer, 'w') as zip_file:
+                    # Add config.json to the export
+                    config = load_config()  # Import this from config.py
+                    zip_file.writestr('config.json', json.dumps(config, indent=2))
+                    
                     zip_file.writestr('db.json', json_data)
 
                     for foto in Foto.objects.all():
