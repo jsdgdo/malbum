@@ -2,13 +2,20 @@
 
 FROM python:3.12
 
-# Install Apache and mod_wsgi
+# Install Apache, mod_wsgi and Pillow dependencies
 RUN apt-get update && apt-get install -y \
     apache2 \
     apache2-dev \
     libapache2-mod-wsgi-py3 \
+    # Pillow dependencies
+    libjpeg-dev \
+    zlib1g-dev \
+    libpng-dev \
+    python3-pil \
+    python3-pil.imagetk \
     && a2enmod ssl \
-    && a2enmod wsgi
+    && a2enmod wsgi \
+    && a2enmod rewrite
 
 # Copy SSL certificates
 COPY ./certs/certificate.cer /etc/ssl/certs/
@@ -37,6 +44,14 @@ RUN chmod +x /code/entrypoint.sh
 RUN dos2unix /code/entrypoint.sh && apt-get --purge remove -y dos2unix && rm -rf /var/lib/apt/lists/*
 RUN chmod +x /code/entrypoint.sh
 RUN a2enmod rewrite
+
+# Install requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Explicitly install and build Pillow from source
+RUN pip uninstall -y pillow && \
+    pip install --no-cache-dir --no-binary :all: pillow
 
 EXPOSE 80 443
 
