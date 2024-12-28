@@ -15,10 +15,10 @@ COPY ./certs/* /etc/ssl/certs/
 COPY ./certs/*.key /etc/ssl/private/
 
 # Copy Apache configuration
-COPY ./apache-config.conf /etc/apache2/sites-available/001-malbum.conf
+COPY ./apache-config.conf /etc/apache2/sites-available/000-default.conf
 
 # Enable the site
-RUN a2ensite 001-malbum
+RUN a2ensite 000-default
 
 ENV PYTHONBUFFERED=1
 
