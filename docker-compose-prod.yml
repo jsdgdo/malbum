@@ -9,5 +9,3 @@ services:
     volumes:
       - .:/code
       - ./entrypoint.sh:/code/entrypoint.sh
-    environment:
-      - DJANGO_SETTINGS_MODULE=malbum.settings.production
