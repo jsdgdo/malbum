@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y \
     && a2enmod wsgi
 
 # Copy SSL certificates
-COPY ./certs/* /etc/ssl/certs/
-COPY ./certs/*.key /etc/ssl/private/
+COPY ./certs/certificate.cer /etc/ssl/certs/
+COPY ./certs/fullchain.cer /etc/ssl/certs/
+COPY ./certs/private.key /etc/ssl/private/
 
 # Copy Apache configuration
 COPY ./apache-config.conf /etc/apache2/sites-available/000-default.conf
