@@ -1,0 +1,12 @@
+## Para usar este correr `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up`
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/code
+    environment:
+      - DJANGO_SETTINGS_MODULE=malbum.settings.production

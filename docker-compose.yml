@@ -1,3 +1,4 @@
+## Para usar este correr `docker-compose up`
 services:
   web:
     build: .

@@ -1,0 +1,41 @@
+## Para usar este, correr `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up`
+
+FROM python:3.x
+
+# Install Apache and mod_wsgi
+RUN apt-get update && apt-get install -y \
+    apache2 \
+    apache2-dev \
+    libapache2-mod-wsgi-py3 \
+    && a2enmod ssl \
+    && a2enmod wsgi
+
+# Copy SSL certificates
+COPY ./certs/certificate.crt /etc/ssl/certs/
+COPY ./certs/private.key /etc/ssl/private/
+
+# Copy Apache configuration
+COPY ./apache-config.conf /etc/apache2/sites-available/001-malbum.conf
+
+# Enable the site
+RUN a2ensite 001-malbum
+
+ENV PYTHONBUFFERED=1
+
+WORKDIR /code
+
+COPY requirements.txt .
+
+RUN pip install -r requirements.txt
+RUN apt-get update && apt-get install -y sqlite3 dos2unix
+
+COPY . .
+
+COPY entrypoint.sh /code/
+RUN chmod +x /code/entrypoint.sh
+RUN dos2unix /code/entrypoint.sh && apt-get --purge remove -y dos2unix && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8080
+
+ENTRYPOINT ["/code/entrypoint.sh"]
+CMD ["python3", "-u", "manage.py", "runserver", "0.0.0.0:8080"]
