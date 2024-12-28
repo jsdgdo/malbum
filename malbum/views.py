@@ -24,7 +24,7 @@ import uuid
 from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Q
-from .config import get_valor, set_valor, get_default_config, save_config
+from .config import get_valor, set_valor, get_default_config, save_config, load_config
 
 def inicio(request):
   if request.user.is_authenticated:
