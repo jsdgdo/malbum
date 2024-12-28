@@ -43,6 +43,11 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 RUN apt-get update && apt-get install -y sqlite3 dos2unix
 
+# Create media directory and set permissions BEFORE copying application code
+RUN mkdir -p /code/media /code/media/fotos /code/media/profile_pics && \
+    chown -R www-data:www-data /code/media && \
+    chmod -R 775 /code/media
+
 COPY . .
 
 COPY entrypoint.sh /code/
@@ -58,11 +63,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Explicitly install and build Pillow from source
 RUN pip uninstall -y pillow && \
     pip install --no-cache-dir --no-binary :all: pillow
-
-# Create media directory and set permissions
-RUN mkdir -p /code/media /code/media/fotos /code/media/profile_pics && \
-    chown -R www-data:www-data /code/media && \
-    chmod -R 775 /code/media
 
 EXPOSE 80 443
 
