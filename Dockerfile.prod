@@ -35,8 +35,9 @@ COPY entrypoint.sh /code/
 RUN chmod +x /code/entrypoint.sh
 RUN dos2unix /code/entrypoint.sh && apt-get --purge remove -y dos2unix && rm -rf /var/lib/apt/lists/*
 RUN chmod +x /code/entrypoint.sh
+RUN a2enmod rewrite
 
-EXPOSE 8080
+EXPOSE 80 443
 
 ENTRYPOINT ["/code/entrypoint.sh"]
 CMD ["python3", "-u", "manage.py", "runserver", "0.0.0.0:8080"]
