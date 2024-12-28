@@ -10,7 +10,3 @@ services:
     volumes:
       - .:/code
       - ./entrypoint.sh:/code/entrypoint.sh
-      - media_volume:/code/media
-
-volumes:
-  media_volume:
