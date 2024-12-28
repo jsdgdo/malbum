@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     zlib1g-dev \
     libpng-dev \
+    python3-pil \
+    python3-pil.imagetk \
     && a2enmod ssl \
     && a2enmod wsgi \
     && a2enmod rewrite
@@ -43,9 +45,13 @@ RUN dos2unix /code/entrypoint.sh && apt-get --purge remove -y dos2unix && rm -rf
 RUN chmod +x /code/entrypoint.sh
 RUN a2enmod rewrite
 
-# After installing requirements, reinstall Pillow
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir --force-reinstall pillow
+# Install requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Explicitly install and build Pillow from source
+RUN pip uninstall -y pillow && \
+    pip install --no-cache-dir --no-binary :all: pillow
 
 EXPOSE 80 443
 
