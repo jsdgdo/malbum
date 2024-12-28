@@ -5,7 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     ports:
-      - "8080:8080"
+      - "80:80"
+      - "443:443"
     volumes:
       - .:/code
       - ./entrypoint.sh:/code/entrypoint.sh
