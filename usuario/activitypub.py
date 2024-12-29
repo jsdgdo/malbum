@@ -78,6 +78,16 @@ def webfinger(request):
                 "rel": "self",
                 "type": "application/activity+json",
                 "href": actor_url
+            },
+            {
+                "rel": "http://webfinger.net/rel/profile-page",
+                "type": "text/html",
+                "href": f"https://{domain}/@{username}"
+            },
+            {
+                "rel": "self",
+                "type": "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"",
+                "href": actor_url
             }
         ]
     })
