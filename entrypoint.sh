@@ -8,8 +8,11 @@ mkdir -p /code/staticfiles
 # Create database directory if it doesn't exist and set permissions
 mkdir -p /code/data
 touch /code/data/db.sqlite3
+touch /code/config/config.json
 chmod 664 /code/data/db.sqlite3
+chmod 664 /code/config/config.json
 chmod 775 /code/data
+chmod 775 /code/config
 
 # Collect static files
 python manage.py collectstatic --noinput

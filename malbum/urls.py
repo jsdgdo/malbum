@@ -23,13 +23,13 @@ from django.conf.urls.static import static
 from .feeds import FotoFeed
 from .views import control
 from .views import importar_datos
+from usuario import views as usuario_views
+from usuario import activitypub
 
 urlpatterns = [
     path('', views.inicio, name="inicio"),
     path('admin/', admin.site.urls),
     path('usuario/', include('usuario.urls')),
-    path('ap/', include('usuario.urls')),
-    path('user/', include('usuario.urls')),
     path('subir-foto/', subir_foto, name='subir_foto'),
     path('agregar-etiqueta', views.agregar_etiqueta, name='agregar_etiqueta'),
     path('agregar-coleccion', views.agregar_coleccion, name='agregar_coleccion'),
@@ -48,6 +48,11 @@ urlpatterns = [
     path('colecciones/buscar-fotos/', views.buscar_fotos, name='buscar_fotos'),
     path('colecciones/agregar-foto/', views.agregar_foto_coleccion, name='agregar_foto_coleccion'),
     path('colecciones/quitar-foto/', views.quitar_foto_coleccion, name='quitar_foto_coleccion'),
+    path("actor/<str:username>/", usuario_views.activitypub_actor, name="activitypub_actor"),
+    path("inbox/<str:username>/", usuario_views.activitypub_inbox, name="activitypub_inbox"),
+    path("outbox/<str:username>/", usuario_views.activitypub_outbox, name="activitypub_outbox"),
+    path('<str:username>/', usuario_views.perfil_usuario, name='perfil_usuario'),
+    path('.well-known/webfinger', activitypub.webfinger, name='webfinger'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
