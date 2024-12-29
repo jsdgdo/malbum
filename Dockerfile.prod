@@ -36,11 +36,12 @@ RUN mkdir -p /var/run/apache2 /var/lock/apache2 && \
     chmod -R 755 /var/run/apache2 /var/lock/apache2
 
 # Create media, static, and data directories with correct permissions
-RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles /code/data && \
+RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles /code/data /code/config && \
     touch /code/data/db.sqlite3 && \
+    touch /code/config/config.json && \
     chown -R www-data:www-data /code && \
     chmod -R 775 /code && \
-    chmod 664 /code/data/db.sqlite3
+    chmod 664 /code/data/db.sqlite3 /code/config/config.json
 
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
