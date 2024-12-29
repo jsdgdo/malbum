@@ -10,11 +10,11 @@ from django.core.paginator import Paginator
 
 def get_actor_url(username):
     domain = get_valor('dominio')
-    return f"https://{domain}/usuario/actor/{username}"
+    return f"https://{domain}/ap/{username}"
 
 def get_foto_url(foto_id):
     domain = get_valor('dominio')
-    return f"https://{domain}/usuario/foto/{foto_id}"
+    return f"https://{domain}/ap/foto/{foto_id}"
 
 def actor_info(request, username):
     usuario = get_object_or_404(Usuario, username=username)
@@ -155,5 +155,62 @@ def outbox(request, username):
         "first": f"{actor_url}/outbox?page=1",
         "last": f"{actor_url}/outbox?page={paginator.num_pages}",
         "current": f"{actor_url}/outbox?page={page_number}",
+        "orderedItems": items
+    })
+
+def followers(request, username):
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+    
+    usuario = get_object_or_404(Usuario, username=username)
+    actor_url = get_actor_url(username)
+    
+    # Get all followers
+    # Note: You'll need to implement a Follower model and relationship
+    followers = usuario.followers.all().order_by('-created_at')
+    
+    # Paginate results
+    page_size = 20
+    paginator = Paginator(followers, page_size)
+    page_number = request.GET.get('page', 1)
+    page = paginator.get_page(page_number)
+    
+    items = [follower.actor_url for follower in page]
+    
+    return JsonResponse({
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "type": "OrderedCollection",
+        "totalItems": followers.count(),
+        "first": f"{actor_url}/followers?page=1",
+        "last": f"{actor_url}/followers?page={paginator.num_pages}",
+        "current": f"{actor_url}/followers?page={page_number}",
+        "orderedItems": items
+    })
+
+def following(request, username):
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+    
+    usuario = get_object_or_404(Usuario, username=username)
+    actor_url = get_actor_url(username)
+    
+    # Get all accounts this user follows
+    following = usuario.following.all().order_by('-created_at')
+    
+    # Paginate results
+    page_size = 20
+    paginator = Paginator(following, page_size)
+    page_number = request.GET.get('page', 1)
+    page = paginator.get_page(page_number)
+    
+    items = [follow.actor_url for follow in page]
+    
+    return JsonResponse({
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "type": "OrderedCollection",
+        "totalItems": following.count(),
+        "first": f"{actor_url}/following?page=1",
+        "last": f"{actor_url}/following?page={paginator.num_pages}",
+        "current": f"{actor_url}/following?page={page_number}",
         "orderedItems": items
     }) 

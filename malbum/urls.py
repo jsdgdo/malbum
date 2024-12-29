@@ -47,6 +47,12 @@ urlpatterns = [
     path('colecciones/buscar-fotos/', views.buscar_fotos, name='buscar_fotos'),
     path('colecciones/agregar-foto/', views.agregar_foto_coleccion, name='agregar_foto_coleccion'),
     path('colecciones/quitar-foto/', views.quitar_foto_coleccion, name='quitar_foto_coleccion'),
+    path("ap/<str:username>/", activitypub.actor_info, name="activitypub_actor"),
+    path("ap/foto/<int:id>/", activitypub.foto_info, name="activitypub_foto"),
+    path("ap/<str:username>/inbox", activitypub.inbox, name="activitypub_inbox"),
+    path("ap/<str:username>/outbox", activitypub.outbox, name="activitypub_outbox"),
+    path("ap/<str:username>/followers", activitypub.followers, name="activitypub_followers"),
+    path("ap/<str:username>/following", activitypub.following, name="activitypub_following"),
     path('.well-known/webfinger', activitypub.webfinger, name='webfinger'),
 ]
 
