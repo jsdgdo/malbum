@@ -1,16 +1,15 @@
-## Para usar este, correr `docker-compose -f docker-compose-prod.yml up`
+version: '3'
+
 services:
   web:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
-      - .:/code
-      - ./entrypoint.sh:/code/entrypoint.sh
-      - media_volume:/code/media
-
-volumes:
-  media_volume:
+      - ./media:/code/media
+      - ./staticfiles:/code/staticfiles
+      - ./db.sqlite3:/code/db.sqlite3
+    ports:
+      - "8080:80"
+    environment:
+      - DJANGO_SETTINGS_MODULE=malbum.settings
