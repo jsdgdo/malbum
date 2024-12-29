@@ -48,7 +48,7 @@ def foto_info(request, foto_id):
     foto = get_object_or_404(Foto, id=foto_id)
     foto_url = get_foto_url(foto_id)
     
-    return JsonResponse({
+    response = JsonResponse({
         "@context": "https://www.w3.org/ns/activitystreams",
         "type": "Image",
         "id": foto_url,
@@ -65,6 +65,12 @@ def foto_info(request, foto_id):
         "published": foto.fecha_subida.isoformat(),
         "to": ["https://www.w3.org/ns/activitystreams#Public"]
     })
+    
+    # Set required headers
+    response["Content-Type"] = "application/activity+json"
+    response["Access-Control-Allow-Origin"] = "*"
+    
+    return response
 
 def webfinger(request):
     resource = request.GET.get('resource', '')
@@ -170,7 +176,7 @@ def outbox(request, username):
             }
         })
     
-    return JsonResponse({
+    response = JsonResponse({
         "@context": "https://www.w3.org/ns/activitystreams",
         "type": "OrderedCollection",
         "totalItems": fotos.count(),
@@ -179,6 +185,12 @@ def outbox(request, username):
         "current": f"{actor_url}/outbox?page={page_number}",
         "orderedItems": items
     })
+    
+    # Set required headers
+    response["Content-Type"] = "application/activity+json"
+    response["Access-Control-Allow-Origin"] = "*"
+    
+    return response
 
 def followers(request, username):
     if request.method != 'GET':
