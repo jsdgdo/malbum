@@ -5,6 +5,12 @@ mkdir -p /code/media/fotos
 mkdir -p /code/media/profile_pics
 mkdir -p /code/staticfiles
 
+# Create database directory if it doesn't exist and set permissions
+mkdir -p $(dirname /code/db.sqlite3)
+touch /code/db.sqlite3
+chmod 664 /code/db.sqlite3
+chmod 775 $(dirname /code/db.sqlite3)
+
 # Collect static files
 python manage.py collectstatic --noinput
 
