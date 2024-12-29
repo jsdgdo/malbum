@@ -14,6 +14,7 @@ services:
       - static_volume:/code/staticfiles
       - ./certs:/etc/ssl/certs/malbum
       - sqlite_data:/code/data
+      - config_data:/code/config
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -21,3 +22,4 @@ volumes:
   media_volume:
   static_volume:
   sqlite_data:
+  config_data:
