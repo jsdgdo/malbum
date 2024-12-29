@@ -19,6 +19,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install mod_wsgi
 
+# Install and configure mod_wsgi
+RUN mod_wsgi-express install-module
+RUN echo "LoadModule wsgi_module $(find /usr/lib/apache2/modules/ -name 'mod_wsgi*.so')" > /etc/apache2/mods-available/wsgi.load
+RUN a2enmod wsgi
+
 # Copy project files
 COPY . .
 
@@ -36,7 +41,6 @@ RUN chmod +x /code/entrypoint.sh
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
 # Enable Apache modules
-RUN a2enmod wsgi
 RUN a2enmod rewrite
 
 # Switch to www-data user
