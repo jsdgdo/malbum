@@ -7,12 +7,19 @@ mkdir -p /code/staticfiles
 
 # Create database directory if it doesn't exist and set permissions
 mkdir -p /code/data
+mkdir -p /code/config
 touch /code/data/db.sqlite3
 touch /code/config/config.json
 chmod 664 /code/data/db.sqlite3
 chmod 664 /code/config/config.json
 chmod 775 /code/data
 chmod 775 /code/config
+
+# Set proper ownership for files that need to be written by www-data
+chown www-data:www-data /code/data/db.sqlite3
+chown www-data:www-data /code/config/config.json
+chown www-data:www-data /code/data
+chown www-data:www-data /code/config
 
 # Collect static files
 python manage.py collectstatic --noinput
