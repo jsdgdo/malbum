@@ -118,16 +118,32 @@ def inbox(request, username):
         return HttpResponse(status=405)
     
     usuario = get_object_or_404(Usuario, username=username)
-    activity = json.loads(request.body)
-    
-    # Handle Follow activity
-    if activity['type'] == 'Follow':
-        try:
+    try:
+        activity = json.loads(request.body)
+        print(f"Received activity: {activity}")  # Debug logging
+        
+        # Handle Follow activity
+        if activity['type'] == 'Follow':
             # Create the follow relationship
             follower_url = activity['actor']
+            
+            # Extract domain and username from follower URL if possible
+            try:
+                from urllib.parse import urlparse
+                parsed_url = urlparse(follower_url)
+                domain = parsed_url.netloc
+                username = parsed_url.path.split('/')[-1]
+            except:
+                domain = ''
+                username = ''
+            
             follow, created = Follow.objects.get_or_create(
                 following=usuario,
-                actor_url=follower_url
+                actor_url=follower_url,
+                defaults={
+                    'remote_username': username,
+                    'remote_domain': domain
+                }
             )
             
             # Create Accept activity
@@ -160,9 +176,11 @@ def inbox(request, username):
                     print(f"Accept response: {r.status_code}")
                     print(f"Accept response content: {r.content}")
             
-        except Exception as e:
-            print(f"Error processing follow: {e}")
-            return HttpResponse(status=500)
+    except Exception as e:
+        print(f"Error processing follow: {e}")
+        import traceback
+        traceback.print_exc()
+        return HttpResponse(status=500)
     
     return HttpResponse(status=202)
 

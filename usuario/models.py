@@ -54,11 +54,16 @@ class Usuario(AbstractUser):
     return self.username
   
 class Follow(models.Model):
-    follower = models.ForeignKey(Usuario, related_name='following', on_delete=models.CASCADE)
-    following = models.ForeignKey(Usuario, related_name='followers', on_delete=models.CASCADE)
+    following = models.ForeignKey('Usuario', related_name='followers', on_delete=models.CASCADE)
     actor_url = models.URLField(max_length=500)
     created_at = models.DateTimeField(default=timezone.now)
+    # Optional: store additional info about the remote follower
+    remote_username = models.CharField(max_length=255, blank=True, null=True)
+    remote_domain = models.CharField(max_length=255, blank=True, null=True)
     
     class Meta:
-        unique_together = ('follower', 'following')
+        unique_together = ('following', 'actor_url')
+        
+    def __str__(self):
+        return f"{self.actor_url} follows {self.following}"
   
