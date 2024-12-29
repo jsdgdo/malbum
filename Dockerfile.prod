@@ -27,10 +27,14 @@ WORKDIR /code
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Copy SSL certificates
+# Copy SSL certificates and set permissions
 COPY ./certs/certificate.cer /etc/ssl/certs/
 COPY ./certs/fullchain.cer /etc/ssl/certs/
 COPY ./certs/private.key /etc/ssl/private/
+RUN chmod 644 /etc/ssl/certs/certificate.cer \
+    && chmod 644 /etc/ssl/certs/fullchain.cer \
+    && chmod 600 /etc/ssl/private/private.key \
+    && chown www-data:www-data /etc/ssl/private/private.key
 
 # Create and set permissions for Apache directories
 RUN mkdir -p /var/run/apache2 /var/lock/apache2 && \
