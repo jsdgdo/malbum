@@ -20,7 +20,7 @@ def actor_info(request, username):
     usuario = get_object_or_404(Usuario, username=username)
     actor_url = get_actor_url(username)
     
-    return JsonResponse({
+    response = JsonResponse({
         "@context": "https://www.w3.org/ns/activitystreams",
         "type": "Person",
         "id": actor_url,
@@ -37,6 +37,12 @@ def actor_info(request, username):
             "publicKeyPem": get_valor('clave_activitypub', '')
         }
     })
+    
+    # Set required headers
+    response["Content-Type"] = "application/activity+json"
+    response["Access-Control-Allow-Origin"] = "*"
+    
+    return response
 
 def foto_info(request, foto_id):
     foto = get_object_or_404(Foto, id=foto_id)
@@ -71,7 +77,7 @@ def webfinger(request):
     usuario = get_object_or_404(Usuario, username=username)
     actor_url = get_actor_url(username)
     
-    return JsonResponse({
+    response = JsonResponse({
         "subject": f"acct:{username}@{domain}",
         "links": [
             {
@@ -91,6 +97,12 @@ def webfinger(request):
             }
         ]
     })
+    
+    # Set required headers
+    response["Content-Type"] = "application/jrd+json"
+    response["Access-Control-Allow-Origin"] = "*"
+    
+    return response
 
 def inbox(request, username):
     if request.method != 'POST':
