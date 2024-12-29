@@ -9,6 +9,103 @@ from datetime import datetime
 from django.core.paginator import Paginator
 import requests
 from django.views.decorators.csrf import csrf_exempt
+import base64
+import hashlib
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from urllib.parse import urlparse
+import time
+
+def load_private_key():
+    try:
+        with open('/code/private.pem', 'rb') as key_file:
+            private_key = serialization.load_pem_private_key(
+                key_file.read(),
+                password=None
+            )
+            return private_key
+    except Exception as e:
+        print(f"Error loading private key: {e}")
+        return None
+
+def sign_request(private_key, method, path, host, date, digest=None):
+    signed_string = f"(request-target): {method.lower()} {path}\n"
+    signed_string += f"host: {host}\n"
+    signed_string += f"date: {date}"
+    if digest:
+        signed_string += f"\ndigest: {digest}"
+
+    signature = private_key.sign(
+        signed_string.encode('utf-8'),
+        padding.PKCS1v15(),
+        hashes.SHA256()
+    )
+    
+    signature_b64 = base64.b64encode(signature).decode('utf-8')
+    
+    key_id = f"https://{get_valor('dominio')}/ap/jose#main-key"
+    
+    header = f'keyId="{key_id}",algorithm="rsa-sha256",headers="(request-target) host date{" digest" if digest else ""}",signature="{signature_b64}"'
+    
+    return header
+
+def send_signed_request(url, data, method='POST'):
+    try:
+        private_key = load_private_key()
+        if not private_key:
+            raise Exception("Could not load private key")
+
+        parsed_url = urlparse(url)
+        path = parsed_url.path
+        if parsed_url.query:
+            path = f"{path}?{parsed_url.query}"
+        
+        date = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+        
+        # Calculate digest if there's a body
+        if data:
+            body = json.dumps(data).encode('utf-8')
+            digest = f"SHA-256={base64.b64encode(hashlib.sha256(body).digest()).decode('utf-8')}"
+        else:
+            body = None
+            digest = None
+
+        # Generate signature
+        signature = sign_request(
+            private_key,
+            method,
+            path,
+            parsed_url.netloc,
+            date,
+            digest
+        )
+
+        # Prepare headers
+        headers = {
+            'Host': parsed_url.netloc,
+            'Date': date,
+            'Signature': signature,
+            'Accept': 'application/activity+json',
+            'Content-Type': 'application/activity+json',
+        }
+        if digest:
+            headers['Digest'] = digest
+
+        # Send request
+        response = requests.request(
+            method=method,
+            url=url,
+            json=data if data else None,
+            headers=headers
+        )
+        
+        return response
+
+    except Exception as e:
+        print(f"Error sending signed request: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 def get_actor_url(username):
     domain = get_valor('dominio')
@@ -120,16 +217,13 @@ def inbox(request, username):
     usuario = get_object_or_404(Usuario, username=username)
     try:
         activity = json.loads(request.body)
-        print(f"Received activity: {activity}")  # Debug logging
+        print(f"Received activity: {activity}")
         
         # Handle Follow activity
         if activity['type'] == 'Follow':
-            # Create the follow relationship
             follower_url = activity['actor']
             
-            # Extract domain and username from follower URL if possible
             try:
-                from urllib.parse import urlparse
                 parsed_url = urlparse(follower_url)
                 domain = parsed_url.netloc
                 username = parsed_url.path.split('/')[-1]
@@ -149,9 +243,9 @@ def inbox(request, username):
             # Create Accept activity
             accept_activity = {
                 "@context": "https://www.w3.org/ns/activitystreams",
-                "id": f"{get_actor_url(username)}#accepts/follows/{follow.id}",
+                "id": f"https://{get_valor('dominio')}/ap/{usuario.username}#accepts/follows/{follow.id}",
                 "type": "Accept",
-                "actor": get_actor_url(username),
+                "actor": f"https://{get_valor('dominio')}/ap/{usuario.username}",
                 "object": activity
             }
             
@@ -163,19 +257,12 @@ def inbox(request, username):
                 follower_inbox = follower_info.get('inbox')
                 
                 if follower_inbox:
-                    # Send Accept activity
-                    headers = {
-                        'Content-Type': 'application/activity+json',
-                        'Accept': 'application/activity+json'
-                    }
-                    r = requests.post(
-                        follower_inbox, 
-                        json=accept_activity,
-                        headers=headers
-                    )
-                    print(f"Accept response: {r.status_code}")
-                    print(f"Accept response content: {r.content}")
-            
+                    # Send signed Accept activity
+                    r = send_signed_request(follower_inbox, accept_activity)
+                    if r:
+                        print(f"Accept response: {r.status_code}")
+                        print(f"Accept response content: {r.content}")
+                    
     except Exception as e:
         print(f"Error processing follow: {e}")
         import traceback
