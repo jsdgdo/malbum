@@ -12,10 +12,8 @@ services:
       - .:/code
       - media_volume:/code/media
       - static_volume:/code/staticfiles
-    user: www-data
     environment:
       - PYTHONUNBUFFERED=1
-    command: bash -c "chmod -R 775 /code && ./entrypoint.sh"
 
 volumes:
   media_volume:

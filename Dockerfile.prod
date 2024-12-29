@@ -32,13 +32,14 @@ RUN mkdir -p /var/run/apache2 /var/lock/apache2 && \
     chown -R www-data:www-data /var/run/apache2 /var/lock/apache2 /var/log/apache2 && \
     chmod -R 755 /var/run/apache2 /var/lock/apache2
 
-# Create media and static directories
+# Create media and static directories with correct permissions
 RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles && \
     chown -R www-data:www-data /code && \
     chmod -R 775 /code
 
 COPY . .
-RUN chown -R www-data:www-data /code
+RUN chown -R www-data:www-data /code && \
+    chmod -R 775 /code
 
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
@@ -49,5 +50,5 @@ USER www-data
 # Expose port
 EXPOSE 80
 
-# Start Apache (will be called by entrypoint.sh)
+# Start Apache
 CMD ["./entrypoint.sh"]

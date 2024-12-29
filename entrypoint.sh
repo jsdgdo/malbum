@@ -5,11 +5,6 @@ mkdir -p /code/media/fotos
 mkdir -p /code/media/profile_pics
 mkdir -p /code/staticfiles
 
-# Ensure database directory is writable
-touch /code/db.sqlite3
-chmod 664 /code/db.sqlite3
-chmod 775 /code
-
 # Collect static files
 python manage.py collectstatic --noinput
 
