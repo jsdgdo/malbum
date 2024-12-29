@@ -1,12 +1,14 @@
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from .models import Usuario
+from .models import Usuario, Follow
 from malbum.models import Foto
 from malbum.config import get_valor
 import json
 from datetime import datetime
 from django.core.paginator import Paginator
+import requests
+from django.views.decorators.csrf import csrf_exempt
 
 def get_actor_url(username):
     domain = get_valor('dominio')
@@ -110,6 +112,7 @@ def webfinger(request):
     
     return response
 
+@csrf_exempt
 def inbox(request, username):
     if request.method != 'POST':
         return HttpResponse(status=405)
@@ -119,17 +122,49 @@ def inbox(request, username):
     
     # Handle Follow activity
     if activity['type'] == 'Follow':
-        # Here you would verify the signature and handle the follow request
-        # For testing, we'll just accept all follows
+        # Create the follow relationship
+        follower_url = activity['actor']
+        Follow.objects.get_or_create(
+            follower=usuario,
+            following=usuario,
+            actor_url=follower_url
+        )
+        
+        # Create Accept activity
         accept_activity = {
             "@context": "https://www.w3.org/ns/activitystreams",
+            "id": f"{get_actor_url(username)}#accept-{activity['id'].split('/')[-1]}",
             "type": "Accept",
-            "to": [activity['actor']],
             "actor": get_actor_url(username),
-            "object": activity
+            "object": activity,
+            "to": [follower_url]
         }
-        # Here you would send the Accept activity to the follower's inbox
         
+        # Send Accept activity to follower's inbox
+        follower_inbox = None
+        try:
+            # Fetch follower's actor info to get their inbox
+            headers = {'Accept': 'application/activity+json'}
+            r = requests.get(follower_url, headers=headers)
+            if r.status_code == 200:
+                follower_info = r.json()
+                follower_inbox = follower_info.get('inbox')
+                
+                if follower_inbox:
+                    # Send Accept activity
+                    headers = {
+                        'Content-Type': 'application/activity+json',
+                        'Accept': 'application/activity+json'
+                    }
+                    r = requests.post(follower_inbox, 
+                                    json=accept_activity,
+                                    headers=headers)
+                    if r.status_code not in [200, 202]:
+                        print(f"Error sending Accept: {r.status_code}")
+                
+        except Exception as e:
+            print(f"Error processing follow: {e}")
+    
     return HttpResponse(status=202)
 
 def outbox(request, username):
