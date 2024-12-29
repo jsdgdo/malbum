@@ -24,17 +24,11 @@ RUN a2enmod wsgi
 
 WORKDIR /code
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Copy project files first
+COPY . .
 
-# Copy SSL certificates and set permissions
-COPY ./certs/certificate.cer /etc/ssl/certs/
-COPY ./certs/fullchain.cer /etc/ssl/certs/
-COPY ./certs/private.key /etc/ssl/private/
-RUN chmod 644 /etc/ssl/certs/certificate.cer \
-    && chmod 644 /etc/ssl/certs/fullchain.cer \
-    && chmod 600 /etc/ssl/private/private.key \
-    && chown www-data:www-data /etc/ssl/private/private.key
+# Install Python dependencies
+RUN pip install -r requirements.txt
 
 # Create and set permissions for Apache directories
 RUN mkdir -p /var/run/apache2 /var/lock/apache2 && \
@@ -46,12 +40,17 @@ RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles && \
     chown -R www-data:www-data /code && \
     chmod -R 775 /code
 
-COPY . .
-RUN chown -R www-data:www-data /code && \
-    chmod -R 775 /code
-
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
+
+# Copy SSL certificates and set permissions (do this last to avoid overwriting)
+COPY ./certs/certificate.cer /etc/ssl/certs/
+COPY ./certs/fullchain.cer /etc/ssl/certs/
+COPY ./certs/private.key /etc/ssl/private/
+RUN chmod 644 /etc/ssl/certs/certificate.cer \
+    && chmod 644 /etc/ssl/certs/fullchain.cer \
+    && chmod 600 /etc/ssl/private/private.key \
+    && chown www-data:www-data /etc/ssl/private/private.key
 
 # Switch to www-data user
 USER www-data
