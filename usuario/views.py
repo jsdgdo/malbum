@@ -46,6 +46,7 @@ def perfil_usuario(request, username):
     'hay_usuario': hay_usuario,
     'fotos': fotos,
   })
+
   user = get_object_or_404(Usuario, username=username)
   activities = {
       "@context": "https://www.w3.org/ns/activitystreams",

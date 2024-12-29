@@ -6,6 +6,7 @@ from malbum.models import Foto
 from malbum.config import get_valor
 import json
 from datetime import datetime
+from django.core.paginator import Paginator
 
 def get_actor_url(username):
     domain = get_valor('dominio')
@@ -101,4 +102,58 @@ def inbox(request, username):
         }
         # Here you would send the Accept activity to the follower's inbox
         
-    return HttpResponse(status=202) 
+    return HttpResponse(status=202)
+
+def outbox(request, username):
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+    
+    usuario = get_object_or_404(Usuario, username=username)
+    actor_url = get_actor_url(username)
+    
+    # Get all photos by this user
+    fotos = Foto.objects.filter(usuario=usuario).order_by('-fecha_subida')
+    
+    # Paginate results
+    page_size = 20
+    paginator = Paginator(fotos, page_size)
+    page_number = request.GET.get('page', 1)
+    page = paginator.get_page(page_number)
+    
+    # Convert photos to Create activities
+    items = []
+    for foto in page:
+        foto_url = get_foto_url(foto.id)
+        items.append({
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "type": "Create",
+            "actor": actor_url,
+            "published": foto.fecha_subida.isoformat(),
+            "to": ["https://www.w3.org/ns/activitystreams#Public"],
+            "object": {
+                "type": "Image",
+                "id": foto_url,
+                "attributedTo": actor_url,
+                "name": foto.titulo,
+                "content": foto.descripcion,
+                "url": [
+                    {
+                        "type": "Link",
+                        "href": request.build_absolute_uri(foto.get_original_url()),
+                        "mediaType": "image/jpeg"
+                    }
+                ],
+                "published": foto.fecha_subida.isoformat(),
+                "to": ["https://www.w3.org/ns/activitystreams#Public"]
+            }
+        })
+    
+    return JsonResponse({
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "type": "OrderedCollection",
+        "totalItems": fotos.count(),
+        "first": f"{actor_url}/outbox?page=1",
+        "last": f"{actor_url}/outbox?page={paginator.num_pages}",
+        "current": f"{actor_url}/outbox?page={page_number}",
+        "orderedItems": items
+    }) 

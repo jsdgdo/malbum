@@ -6,3 +6,5 @@ media/
 db.sqlite3
 config.json
 certs/
+data/
+config/
