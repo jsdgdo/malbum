@@ -23,7 +23,6 @@ from django.conf.urls.static import static
 from .feeds import FotoFeed
 from .views import control
 from .views import importar_datos
-from usuario import views as usuario_views
 from usuario import activitypub
 
 urlpatterns = [
@@ -48,10 +47,6 @@ urlpatterns = [
     path('colecciones/buscar-fotos/', views.buscar_fotos, name='buscar_fotos'),
     path('colecciones/agregar-foto/', views.agregar_foto_coleccion, name='agregar_foto_coleccion'),
     path('colecciones/quitar-foto/', views.quitar_foto_coleccion, name='quitar_foto_coleccion'),
-    path("actor/<str:username>/", usuario_views.activitypub_actor, name="activitypub_actor"),
-    path("inbox/<str:username>/", usuario_views.activitypub_inbox, name="activitypub_inbox"),
-    path("outbox/<str:username>/", usuario_views.activitypub_outbox, name="activitypub_outbox"),
-    path('<str:username>/', usuario_views.perfil_usuario, name='perfil_usuario'),
     path('.well-known/webfinger', activitypub.webfinger, name='webfinger'),
 ]
 

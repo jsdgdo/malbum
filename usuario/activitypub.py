@@ -9,11 +9,11 @@ from datetime import datetime
 
 def get_actor_url(username):
     domain = get_valor('dominio')
-    return f"https://{domain}/ap/users/{username}"
+    return f"https://{domain}/usuario/actor/{username}"
 
 def get_foto_url(foto_id):
     domain = get_valor('dominio')
-    return f"https://{domain}/ap/fotos/{foto_id}"
+    return f"https://{domain}/usuario/foto/{foto_id}"
 
 def actor_info(request, username):
     usuario = get_object_or_404(Usuario, username=username)

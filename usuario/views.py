@@ -46,17 +46,6 @@ def perfil_usuario(request, username):
     'hay_usuario': hay_usuario,
     'fotos': fotos,
   })
-
-def activitypub_actor(request, username):
-  user = get_object_or_404(Usuario, username=username)
-  return JsonResponse(user.get_actor())
-
-@csrf_exempt
-@require_POST
-def activitypub_inbox(request, username):
-  return JsonResponse({"status": "received"}, status=202)
-
-def activitypub_outbox(request, username):
   user = get_object_or_404(Usuario, username=username)
   activities = {
       "@context": "https://www.w3.org/ns/activitystreams",
