@@ -1,47 +1,43 @@
 ## Para usar este, correr `docker-compose -f docker-compose-prod.yml up`
 
-FROM python:3.12-slim
+FROM python:3.12
 
-WORKDIR /code
-
-# Install system dependencies
+# Install Apache and dependencies
 RUN apt-get update && apt-get install -y \
     apache2 \
     apache2-dev \
-    build-essential \
-    python3-dev \
-    libpq-dev \
-    sqlite3 \
-    && rm -rf /var/lib/apt/lists/*
+    libjpeg-dev \
+    zlib1g-dev \
+    libpng-dev \
+    python3-pil \
+    python3-pil.imagetk \
+    && a2enmod ssl \
+    && a2enmod rewrite
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install mod_wsgi via pip
 RUN pip install mod_wsgi
 
-# Install and configure mod_wsgi
+# Configure mod_wsgi
 RUN mod_wsgi-express install-module
 RUN echo "LoadModule wsgi_module $(find /usr/lib/apache2/modules/ -name 'mod_wsgi*.so')" > /etc/apache2/mods-available/wsgi.load
 RUN a2enmod wsgi
 
-# Copy project files
+WORKDIR /code
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Create and set permissions for Apache directories
+RUN mkdir -p /var/run/apache2 /var/lock/apache2 && \
+    chown -R www-data:www-data /var/run/apache2 /var/lock/apache2 /var/log/apache2 && \
+    chmod -R 755 /var/run/apache2 /var/lock/apache2
+
+# Create media and static directories
+RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles && \
+    chown -R www-data:www-data /code/media /code/staticfiles && \
+    chmod -R 775 /code/media /code/staticfiles
+
 COPY . .
-
-# Create necessary directories and set permissions
-RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles
-RUN chown -R www-data:www-data /code
-RUN chmod -R 775 /code/media /code/staticfiles
-RUN chmod 775 /code  # Allow writing to the directory
-
-# Copy and set permissions for entrypoint
-COPY entrypoint.sh /code/
-RUN chmod +x /code/entrypoint.sh
-
-# Copy Apache configuration
-COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
-
-# Enable Apache modules
-RUN a2enmod rewrite
 
 # Switch to www-data user
 USER www-data

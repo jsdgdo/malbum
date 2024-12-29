@@ -5,11 +5,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    volumes:
-      - ./media:/code/media
-      - ./staticfiles:/code/staticfiles
-      - ./db.sqlite3:/code/db.sqlite3
     ports:
-      - "8080:80"
-    environment:
-      - DJANGO_SETTINGS_MODULE=malbum.settings
+      - "80:80"
+      - "443:443"
+    volumes:
+      - .:/code
+      - media_volume:/code/media
+      - static_volume:/code/staticfiles
+    user: www-data
+
+volumes:
+  media_volume:
+  static_volume:
