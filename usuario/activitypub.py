@@ -122,28 +122,24 @@ def inbox(request, username):
     
     # Handle Follow activity
     if activity['type'] == 'Follow':
-        # Create the follow relationship
-        follower_url = activity['actor']
-        Follow.objects.get_or_create(
-            follower=usuario,
-            following=usuario,
-            actor_url=follower_url
-        )
-        
-        # Create Accept activity
-        accept_activity = {
-            "@context": "https://www.w3.org/ns/activitystreams",
-            "id": f"{get_actor_url(username)}#accept-{activity['id'].split('/')[-1]}",
-            "type": "Accept",
-            "actor": get_actor_url(username),
-            "object": activity,
-            "to": [follower_url]
-        }
-        
-        # Send Accept activity to follower's inbox
-        follower_inbox = None
         try:
-            # Fetch follower's actor info to get their inbox
+            # Create the follow relationship
+            follower_url = activity['actor']
+            follow, created = Follow.objects.get_or_create(
+                following=usuario,
+                actor_url=follower_url
+            )
+            
+            # Create Accept activity
+            accept_activity = {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "id": f"{get_actor_url(username)}#accepts/follows/{follow.id}",
+                "type": "Accept",
+                "actor": get_actor_url(username),
+                "object": activity
+            }
+            
+            # Get follower's inbox
             headers = {'Accept': 'application/activity+json'}
             r = requests.get(follower_url, headers=headers)
             if r.status_code == 200:
@@ -156,14 +152,17 @@ def inbox(request, username):
                         'Content-Type': 'application/activity+json',
                         'Accept': 'application/activity+json'
                     }
-                    r = requests.post(follower_inbox, 
-                                    json=accept_activity,
-                                    headers=headers)
-                    if r.status_code not in [200, 202]:
-                        print(f"Error sending Accept: {r.status_code}")
-                
+                    r = requests.post(
+                        follower_inbox, 
+                        json=accept_activity,
+                        headers=headers
+                    )
+                    print(f"Accept response: {r.status_code}")
+                    print(f"Accept response content: {r.content}")
+            
         except Exception as e:
             print(f"Error processing follow: {e}")
+            return HttpResponse(status=500)
     
     return HttpResponse(status=202)
 
@@ -240,8 +239,7 @@ def followers(request, username):
     actor_url = get_actor_url(username)
     
     # Get all followers
-    # Note: You'll need to implement a Follower model and relationship
-    followers = usuario.followers.all().order_by('-created_at')
+    followers = Follow.objects.filter(following=usuario).order_by('-created_at')
     
     # Paginate results
     page_size = 20
@@ -249,17 +247,26 @@ def followers(request, username):
     page_number = request.GET.get('page', 1)
     page = paginator.get_page(page_number)
     
-    items = [follower.actor_url for follower in page]
+    # Get follower URLs
+    items = [follow.actor_url for follow in page]
     
-    return JsonResponse({
+    response = JsonResponse({
         "@context": "https://www.w3.org/ns/activitystreams",
-        "type": "OrderedCollection",
+        "type": "OrderedCollectionPage",
+        "id": f"{actor_url}/followers?page={page_number}",
         "totalItems": followers.count(),
         "first": f"{actor_url}/followers?page=1",
         "last": f"{actor_url}/followers?page={paginator.num_pages}",
-        "current": f"{actor_url}/followers?page={page_number}",
+        "prev": f"{actor_url}/followers?page={page.previous_page_number()}" if page.has_previous() else None,
+        "next": f"{actor_url}/followers?page={page.next_page_number()}" if page.has_next() else None,
+        "partOf": f"{actor_url}/followers",
         "orderedItems": items
     })
+    
+    response["Content-Type"] = "application/activity+json"
+    response["Access-Control-Allow-Origin"] = "*"
+    
+    return response
 
 def following(request, username):
     if request.method != 'GET':
