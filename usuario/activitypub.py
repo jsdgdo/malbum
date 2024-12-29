@@ -152,32 +152,37 @@ def outbox(request, username):
     items = []
     for foto in page:
         foto_url = get_foto_url(foto.id)
+        attachment = {
+            "type": "Document",
+            "mediaType": "image/jpeg",
+            "url": request.build_absolute_uri(foto.get_original_url()),
+            "name": foto.titulo
+        }
+        
         items.append({
-            "@context": "https://www.w3.org/ns/activitystreams",
+            "id": f"{foto_url}#create",
             "type": "Create",
             "actor": actor_url,
             "published": foto.fecha_subida.isoformat(),
             "to": ["https://www.w3.org/ns/activitystreams#Public"],
+            "cc": [f"{actor_url}/followers"],
             "object": {
-                "type": "Image",
                 "id": foto_url,
-                "attributedTo": actor_url,
-                "name": foto.titulo,
-                "content": foto.descripcion,
-                "url": [
-                    {
-                        "type": "Link",
-                        "href": request.build_absolute_uri(foto.get_original_url()),
-                        "mediaType": "image/jpeg"
-                    }
-                ],
+                "type": "Note",
                 "published": foto.fecha_subida.isoformat(),
-                "to": ["https://www.w3.org/ns/activitystreams#Public"]
+                "attributedTo": actor_url,
+                "content": foto.descripcion,
+                "attachment": [attachment],
+                "to": ["https://www.w3.org/ns/activitystreams#Public"],
+                "cc": [f"{actor_url}/followers"]
             }
         })
     
     response = JsonResponse({
-        "@context": "https://www.w3.org/ns/activitystreams",
+        "@context": [
+            "https://www.w3.org/ns/activitystreams",
+            "https://w3id.org/security/v1"
+        ],
         "type": "OrderedCollection",
         "totalItems": fotos.count(),
         "first": f"{actor_url}/outbox?page=1",
