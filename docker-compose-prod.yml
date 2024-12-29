@@ -13,7 +13,7 @@ services:
       - media_volume:/code/media
       - static_volume:/code/staticfiles
       - ./certs:/etc/ssl/certs/malbum
-      - sqlite_data:/code/db.sqlite3
+      - sqlite_data:/code/data
     environment:
       - PYTHONUNBUFFERED=1
 
