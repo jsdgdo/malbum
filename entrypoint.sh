@@ -1,20 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 
-# Create media directories if they don't exist
-mkdir -p /code/media/fotos
-mkdir -p /code/media/profile_pics
-mkdir -p /code/staticfiles
+mkdir -p /code/media/fotos /code/media/profile_pics
+chown -R www-data:www-data /code/media
+chmod -R 775 /code/media
 
-# Ensure database directory is writable
-touch /code/db.sqlite3
-chmod 664 /code/db.sqlite3
-chmod 775 /code
+echo "Applying database migrations..."
+python manage.py migrate --noinput
 
-# Collect static files
+echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Apply database migrations
-python manage.py migrate
-
-# Start Apache (as www-data)
-exec apache2ctl -D FOREGROUND
+exec "$@"

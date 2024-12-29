@@ -1,5 +1,4 @@
-version: '3'
-
+## Para usar este, correr `docker-compose -f docker-compose-prod.yml up`
 services:
   web:
     build:
@@ -10,10 +9,8 @@ services:
       - "443:443"
     volumes:
       - .:/code
+      - ./entrypoint.sh:/code/entrypoint.sh
       - media_volume:/code/media
-      - static_volume:/code/staticfiles
-    user: www-data
 
 volumes:
   media_volume:
-  static_volume:
