@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from django.conf import settings
 
-CONFIG_FILE = Path(settings.BASE_DIR) / 'config.json'
+CONFIG_FILE = Path(settings.BASE_DIR) / 'config' / 'config.json'
 
 def get_default_config():
     return {
