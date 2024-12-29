@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.urls import reverse
+from malbum.config import get_config
 
 class Usuario(AbstractUser):
   nombreCompleto = models.CharField(max_length=255)
@@ -28,26 +30,47 @@ class Usuario(AbstractUser):
 
   def save(self, *args, **kwargs):
     if not self.activitypub_id:
-        self.activitypub_id = f"https://{self.username}.example.com/ap/actor"
+        self.activitypub_id = self.get_activitypub_id()
     super().save(*args, **kwargs)
 
   def get_actor(self):
+    config = get_config()
+    domain = self.get_domain()
+    
     return {
-        "@context": "https://www.w3.org/ns/activitystreams",
+        "@context": [
+            "https://www.w3.org/ns/activitystreams",
+            "https://w3id.org/security/v1"
+        ],
         "id": self.activitypub_id,
         "type": "Person",
         "name": self.username,
         "preferredUsername": self.username,
-        "inbox": f"https://{self.username}.example.com/ap/inbox",
-        "outbox": f"https://{self.username}.example.com/ap/outbox",
-        "followers": f"https://{self.username}.example.com/ap/followers",
-        "following": f"https://{self.username}.example.com/ap/following",
+        "inbox": f"https://{domain}/ap/users/{self.username}/inbox",
+        "outbox": f"https://{domain}/ap/users/{self.username}/outbox",
+        "followers": f"https://{domain}/ap/users/{self.username}/followers",
+        "following": f"https://{domain}/ap/users/{self.username}/following",
         "publicKey": {
-            "id": f"https://{self.username}.example.com/ap/actor#main-key",
+            "id": f"https://{domain}/ap/users/{self.username}#main-key",
             "owner": self.activitypub_id,
-            "publicKeyPem": "TODO: Add Public Key",
-        },
+            "publicKeyPem": config.get('PUBLIC_KEY', '')
+        }
     }
+
+  def get_domain(self):
+    from django.conf import settings
+    return settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost'
+
+  def get_activitypub_id(self):
+    """Return the user's ActivityPub ID"""
+    domain = self.get_domain()
+    return f"https://{domain}/ap/users/{self.username}"
+
+  def get_profile_pic_url(self):
+    """Get the URL for the user's profile picture"""
+    if self.fotoDePerfil:
+        return self.fotoDePerfil.url
+    return '/static/default-profile.jpg'  # You might want to add a default profile image
 
   def __str__(self):
     return self.username

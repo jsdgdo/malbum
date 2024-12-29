@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from . import views
+from . import views, activitypub
 from django.urls import path, include
 from .views import subir_foto
 from django.conf import settings
@@ -29,6 +29,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('usuario/', include('usuario.urls')),
     path('ap/', include('usuario.urls')),
+    path('user/', include('usuario.urls')),
     path('subir-foto/', subir_foto, name='subir_foto'),
     path('agregar-etiqueta', views.agregar_etiqueta, name='agregar_etiqueta'),
     path('agregar-coleccion', views.agregar_coleccion, name='agregar_coleccion'),
@@ -47,6 +48,10 @@ urlpatterns = [
     path('colecciones/buscar-fotos/', views.buscar_fotos, name='buscar_fotos'),
     path('colecciones/agregar-foto/', views.agregar_foto_coleccion, name='agregar_foto_coleccion'),
     path('colecciones/quitar-foto/', views.quitar_foto_coleccion, name='quitar_foto_coleccion'),
+    path('.well-known/webfinger', activitypub.webfinger, name='webfinger'),
+    path('ap/users/<str:username>', activitypub.get_actor, name='ap_actor'),
+    path('ap/users/<str:username>/outbox', activitypub.get_outbox, name='ap_outbox'),
+    path('ap/photos/<int:photo_id>', activitypub.get_photo, name='ap_photo'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
