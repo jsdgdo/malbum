@@ -17,6 +17,21 @@ services:
       - config_data:/code/config
     environment:
       - PYTHONUNBUFFERED=1
+    depends_on:
+      - volume-permissions
+
+  volume-permissions:
+    image: busybox
+    volumes:
+      - media_volume:/code/media
+      - static_volume:/code/staticfiles
+      - sqlite_data:/code/data
+      - config_data:/code/config
+    command: >
+      sh -c "chown -R 33:33 /code/media &&
+             chown -R 33:33 /code/staticfiles &&
+             chown -R 33:33 /code/data &&
+             chown -R 33:33 /code/config"
 
 volumes:
   media_volume:
