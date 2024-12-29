@@ -43,15 +43,6 @@ RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles && \
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
-# Copy SSL certificates and set permissions (do this last to avoid overwriting)
-COPY ./certs/certificate.cer /etc/ssl/certs/
-COPY ./certs/fullchain.cer /etc/ssl/certs/
-COPY ./certs/private.key /etc/ssl/private/
-RUN chmod 644 /etc/ssl/certs/certificate.cer \
-    && chmod 644 /etc/ssl/certs/fullchain.cer \
-    && chmod 600 /etc/ssl/private/private.key \
-    && chown www-data:www-data /etc/ssl/private/private.key
-
 # Switch to www-data user
 USER www-data
 

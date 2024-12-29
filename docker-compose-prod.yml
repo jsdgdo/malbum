@@ -12,6 +12,7 @@ services:
       - .:/code
       - media_volume:/code/media
       - static_volume:/code/staticfiles
+      - ./certs:/etc/ssl/certs/malbum
     environment:
       - PYTHONUNBUFFERED=1
 
