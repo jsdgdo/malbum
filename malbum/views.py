@@ -77,23 +77,17 @@ def agregar_coleccion(request):
 
 @login_required
 def tablon(request):
-  fotos = Foto.objects.filter(usuario=request.user)
-  etiqueta = request.GET.get('etiqueta')
-  coleccion = request.GET.get('coleccion')
-
-  if etiqueta:
-    fotos = fotos.filter(etiquetas__nombre=etiqueta)
-  if coleccion:
-    fotos = fotos.filter(colecciones__titulo=coleccion)
-  
-  context = { 
-    'fotos' : fotos,
-    'etiquetas' : Etiqueta.objects.all(),
-    'colecciones' : Coleccion.objects.all(),
-    'etiqueta_seleccionada' : etiqueta,
-    'coleccion_seleccionada' : coleccion
-  }
-  return render(request, 'tablon.html', context)
+    # Get posts from the user and the people they follow
+    following_users = request.user.following.all()
+    fotos = Foto.objects.filter(
+        Q(usuario=request.user) | 
+        Q(usuario__in=following_users)
+    ).select_related('usuario').order_by('-fecha_subida')
+    
+    context = { 
+        'fotos': fotos,
+    }
+    return render(request, 'tablon.html', context)
 
 def detalle_foto(request, id):
   hay_usuario = Usuario.objects.exists()

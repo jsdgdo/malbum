@@ -1,0 +1,22 @@
+<div class="foto-card">
+    <div class="foto-header">
+        <a href="{% url 'perfil_usuario' foto.usuario.username %}" class="user-info">
+            {% if foto.usuario.fotoDePerfil %}
+                <img src="{{ foto.usuario.fotoDePerfil.url }}" alt="Avatar" class="user-avatar">
+            {% endif %}
+            <span class="username">@{{ foto.usuario.username }}</span>
+        </a>
+        <span class="fecha">{{ foto.fecha_subida|date:"d M Y" }}</span>
+    </div>
+    
+    <a href="{% url 'detalle_foto' foto.id %}">
+        <img src="{{ foto.get_thumbnail_url }}" alt="{{ foto.alt_descripcion }}" class="foto-thumbnail">
+    </a>
+    
+    <div class="foto-info">
+        <h3>{{ foto.titulo }}</h3>
+        {% if foto.descripcion %}
+            <p>{{ foto.descripcion }}</p>
+        {% endif %}
+    </div>
+</div> 
