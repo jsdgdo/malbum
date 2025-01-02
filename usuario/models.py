@@ -27,6 +27,15 @@ class Usuario(AbstractUser):
     verbose_name=('user permissions')
   )
 
+  # Add related_name for reverse relationship
+  following = models.ManyToManyField(
+    'self',
+    through='Follow',
+    through_fields=('follower', 'following'),
+    symmetrical=False,
+    related_name='followers'
+  )
+
   def save(self, *args, **kwargs):
     if not self.activitypub_id:
         self.activitypub_id = f"https://{self.username}.example.com/ap/actor"
@@ -53,16 +62,38 @@ class Usuario(AbstractUser):
   def __str__(self):
     return self.username
   
+def get_default_user():
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    # Get or create a system user
+    user, _ = User.objects.get_or_create(
+        username='system',
+        defaults={
+            'email': 'system@localhost',
+            'is_active': False,
+            'nombreCompleto': 'System User'
+        }
+    )
+    return user.id
+
 class Follow(models.Model):
-    following = models.ForeignKey('Usuario', related_name='followers', on_delete=models.CASCADE)
-    actor_url = models.URLField(max_length=500)
-    created_at = models.DateTimeField(default=timezone.now)
-    # Optional: store additional info about the remote follower
-    remote_username = models.CharField(max_length=255, blank=True, null=True)
-    remote_domain = models.CharField(max_length=255, blank=True, null=True)
-    
+    follower = models.ForeignKey(
+        Usuario, 
+        on_delete=models.CASCADE, 
+        related_name='following_set'
+    )
+    following = models.ForeignKey(
+        Usuario, 
+        on_delete=models.CASCADE, 
+        related_name='followers_set'
+    )
+    actor_url = models.URLField()
+    remote_username = models.CharField(max_length=255)
+    remote_domain = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
-        unique_together = ('following', 'actor_url')
+        unique_together = ('follower', 'following')
         
     def __str__(self):
         return f"{self.actor_url} follows {self.following}"
