@@ -1,7 +1,7 @@
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from .models import Usuario, Follow
+from .models import Usuario, Follow, get_default_user
 from malbum.models import Foto
 from malbum.config import get_valor
 import json
@@ -219,8 +219,18 @@ def inbox(request, username):
         activity = json.loads(request.body)
         print(f"Received activity: {activity}")
         
+        if activity['type'] == 'Undo':
+            # Handle Undo Follow
+            if activity['object']['type'] == 'Follow':
+                follower_url = activity['actor']
+                Follow.objects.filter(
+                    following=usuario,
+                    actor_url=follower_url
+                ).delete()
+                return HttpResponse(status=200)
+        
         # Handle Follow activity
-        if activity['type'] == 'Follow':
+        elif activity['type'] == 'Follow':
             follower_url = activity['actor']
             
             try:
