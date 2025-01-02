@@ -15,6 +15,7 @@ services:
       - ./certs:/etc/ssl/certs/malbum
       - sqlite_data:/code/data
       - config_data:/code/config
+      - ./keys:/code/keys
     environment:
       - PYTHONUNBUFFERED=1
     depends_on:
@@ -27,11 +28,13 @@ services:
       - static_volume:/code/staticfiles
       - sqlite_data:/code/data
       - config_data:/code/config
+      - ./keys:/code/keys
     command: >
       sh -c "chown -R 33:33 /code/media &&
              chown -R 33:33 /code/staticfiles &&
              chown -R 33:33 /code/data &&
-             chown -R 33:33 /code/config"
+             chown -R 33:33 /code/config &&
+             chown -R 33:33 /code/keys"
 
 volumes:
   media_volume:

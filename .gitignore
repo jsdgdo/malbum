@@ -8,3 +8,4 @@ config.json
 certs/
 data/
 config/
+keys/

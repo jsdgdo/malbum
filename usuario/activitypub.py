@@ -18,7 +18,7 @@ import time
 
 def load_private_key():
     try:
-        with open('/code/private.pem', 'rb') as key_file:
+        with open('/code/keys/private.pem', 'rb') as key_file:
             private_key = serialization.load_pem_private_key(
                 key_file.read(),
                 password=None
