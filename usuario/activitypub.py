@@ -394,8 +394,8 @@ def following(request, username):
     usuario = get_object_or_404(Usuario, username=username)
     actor_url = get_actor_url(username)
     
-    # Get all accounts this user follows
-    following = usuario.following.all().order_by('-created_at')
+    # Get all accounts this user follows through the Follow model
+    following = Follow.objects.filter(follower=usuario).order_by('-created_at')
     
     # Paginate results
     page_size = 20
@@ -403,9 +403,10 @@ def following(request, username):
     page_number = request.GET.get('page', 1)
     page = paginator.get_page(page_number)
     
+    # Get the actor URLs from the Follow objects
     items = [follow.actor_url for follow in page]
     
-    return JsonResponse({
+    response = JsonResponse({
         "@context": "https://www.w3.org/ns/activitystreams",
         "type": "OrderedCollection",
         "totalItems": following.count(),
@@ -413,4 +414,9 @@ def following(request, username):
         "last": f"{actor_url}/following?page={paginator.num_pages}",
         "current": f"{actor_url}/following?page={page_number}",
         "orderedItems": items
-    }) 
+    })
+    
+    response["Content-Type"] = "application/activity+json"
+    response["Access-Control-Allow-Origin"] = "*"
+    
+    return response 
