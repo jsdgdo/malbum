@@ -226,16 +226,20 @@ def inbox(request, username):
             try:
                 parsed_url = urlparse(follower_url)
                 domain = parsed_url.netloc
-                username = parsed_url.path.split('/')[-1]
+                remote_username = parsed_url.path.split('/')[-1]
             except:
                 domain = ''
-                username = ''
+                remote_username = ''
+            
+            # Create or get the system user for remote followers
+            system_user = get_default_user()
             
             follow, created = Follow.objects.get_or_create(
                 following=usuario,
                 actor_url=follower_url,
                 defaults={
-                    'remote_username': username,
+                    'follower_id': system_user,  # Set the follower to system user
+                    'remote_username': remote_username,
                     'remote_domain': domain
                 }
             )
