@@ -25,6 +25,7 @@ from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Q
 from .config import get_valor, set_valor, get_default_config, save_config, load_config
+from usuario.activitypub import notify_followers_of_new_post
 
 def inicio(request):
   if request.user.is_authenticated:
@@ -45,6 +46,10 @@ def subir_foto(request):
           foto.usuario = request.user
           foto.save()
           form.save_m2m()
+          
+          # Notify followers of the new post
+          notify_followers_of_new_post(foto)
+          
           return redirect('inicio')
   else:
       form = FotoForm()

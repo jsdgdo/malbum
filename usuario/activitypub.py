@@ -306,13 +306,73 @@ def outbox(request, username):
     for foto in page:
         foto_url = get_foto_url(foto.id)
         attachment = {
-            "type": "Document",
+            "type": "Image",  # Changed from Document to Image
             "mediaType": "image/jpeg",
             "url": request.build_absolute_uri(foto.get_original_url()),
             "name": foto.titulo
         }
         
-        items.append({
+        note = {
+            "id": foto_url,
+            "type": "Note",
+            "published": foto.fecha_subida.isoformat(),
+            "attributedTo": actor_url,
+            "content": foto.descripcion or foto.titulo,  # Use title if no description
+            "attachment": [attachment],
+            "to": ["https://www.w3.org/ns/activitystreams#Public"],
+            "cc": [f"{actor_url}/followers"]
+        }
+        
+        create_activity = {
+            "id": f"{foto_url}#create",
+            "type": "Create",
+            "actor": actor_url,
+            "published": foto.fecha_subida.isoformat(),
+            "to": ["https://www.w3.org/ns/activitystreams#Public"],
+            "cc": [f"{actor_url}/followers"],
+            "object": note
+        }
+        
+        items.append(create_activity)
+    
+    if page_number == '1' or page_number == 1:
+        # First page - return OrderedCollection
+        response_data = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "type": "OrderedCollection",
+            "totalItems": fotos.count(),
+            "first": f"{actor_url}/outbox?page=1",
+            "last": f"{actor_url}/outbox?page={paginator.num_pages}",
+            "orderedItems": items
+        }
+    else:
+        # Other pages - return OrderedCollectionPage
+        response_data = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "type": "OrderedCollectionPage",
+            "id": f"{actor_url}/outbox?page={page_number}",
+            "partOf": f"{actor_url}/outbox",
+            "prev": f"{actor_url}/outbox?page={page.previous_page_number()}" if page.has_previous() else None,
+            "next": f"{actor_url}/outbox?page={page.next_page_number()}" if page.has_next() else None,
+            "orderedItems": items
+        }
+    
+    response = JsonResponse(response_data)
+    response["Content-Type"] = "application/activity+json"
+    response["Access-Control-Allow-Origin"] = "*"
+    
+    return response
+
+def notify_followers_of_new_post(foto):
+    """Notify all followers when a new photo is posted"""
+    try:
+        usuario = foto.usuario
+        actor_url = get_actor_url(usuario.username)
+        foto_url = get_foto_url(foto.id)
+        
+        # Create the Create activity
+        create_activity = {
+            "@context": "https://www.w3.org/ns/activitystreams",
             "id": f"{foto_url}#create",
             "type": "Create",
             "actor": actor_url,
@@ -324,31 +384,39 @@ def outbox(request, username):
                 "type": "Note",
                 "published": foto.fecha_subida.isoformat(),
                 "attributedTo": actor_url,
-                "content": foto.descripcion,
-                "attachment": [attachment],
+                "content": foto.descripcion or foto.titulo,
+                "attachment": [{
+                    "type": "Image",
+                    "mediaType": "image/jpeg",
+                    "url": f"https://{get_valor('dominio')}{foto.get_original_url()}",
+                    "name": foto.titulo
+                }],
                 "to": ["https://www.w3.org/ns/activitystreams#Public"],
                 "cc": [f"{actor_url}/followers"]
             }
-        })
-    
-    response = JsonResponse({
-        "@context": [
-            "https://www.w3.org/ns/activitystreams",
-            "https://w3id.org/security/v1"
-        ],
-        "type": "OrderedCollection",
-        "totalItems": fotos.count(),
-        "first": f"{actor_url}/outbox?page=1",
-        "last": f"{actor_url}/outbox?page={paginator.num_pages}",
-        "current": f"{actor_url}/outbox?page={page_number}",
-        "orderedItems": items
-    })
-    
-    # Set required headers
-    response["Content-Type"] = "application/activity+json"
-    response["Access-Control-Allow-Origin"] = "*"
-    
-    return response
+        }
+        
+        # Get all followers
+        followers = Follow.objects.filter(following=usuario)
+        
+        # Send the Create activity to each follower's inbox
+        for follow in followers:
+            # Get follower's inbox
+            headers = {'Accept': 'application/activity+json'}
+            r = requests.get(follow.actor_url, headers=headers)
+            if r.status_code == 200:
+                follower_info = r.json()
+                follower_inbox = follower_info.get('inbox')
+                
+                if follower_inbox:
+                    # Send signed Create activity
+                    r = send_signed_request(follower_inbox, create_activity)
+                    print(f"Notification sent to {follow.actor_url}: {r.status_code if r else 'Failed'}")
+                    
+    except Exception as e:
+        print(f"Error notifying followers: {e}")
+        import traceback
+        traceback.print_exc()
 
 def followers(request, username):
     if request.method != 'GET':
