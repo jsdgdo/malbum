@@ -25,7 +25,7 @@
                                     {% else %}
                                         <div class="rounded-circle me-2 bg-secondary d-flex align-items-center justify-content-center"
                                              style="width: 32px; height: 32px; color: white;">
-                                            {{ foto.usuario.username|make_list|first|upper }}
+                                            {{ foto.usuario.username|make_list|first|upper }}@{{ request.get_host }}
                                         </div>
                                     {% endif %}
                                 </a>

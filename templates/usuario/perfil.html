@@ -19,6 +19,20 @@
       {% else %}
         <p><em>Sin biografía</em></p>
       {% endif %}
+      
+      {% if request.user.is_authenticated and request.user != usuario %}
+        <div class="follow-button-container">
+          {% if is_following %}
+            <button class="btn btn-outline-primary" onclick="toggleFollow('{{ usuario.username }}', 'unfollow')">
+              Dejar de seguir
+            </button>
+          {% else %}
+            <button class="btn btn-primary" onclick="toggleFollow('{{ usuario.username }}', 'follow')">
+              Seguir
+            </button>
+          {% endif %}
+        </div>
+      {% endif %}
     </div>
 
     <!-- Photo Stream -->
@@ -46,5 +60,31 @@
     </div>
   </div>
 </div>
+
+<script>
+function toggleFollow(username, action) {
+  fetch(`/usuario/${username}/${action}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || 'Error al procesar la solicitud');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error al procesar la solicitud');
+  });
+}
+</script>
+
 <script src="{% static 'js/hide.js' %}"></script>
+{% csrf_token %}
 {% endblock %}

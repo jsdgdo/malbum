@@ -44,6 +44,16 @@
               </li>
             {% endif %}
           </ul>
+          {% if user.is_authenticated %}
+          <form class="d-flex me-3" action="{% url 'buscar_usuarios' %}" method="GET">
+            <input class="form-control me-2" type="search" 
+                   placeholder="Buscar usuarios..." 
+                   name="q" 
+                   value="{{ request.GET.q }}"
+                   aria-label="Buscar">
+            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+          </form>
+          {% endif %}
           <ul class="navbar-nav ms-auto">
             {% if user.is_authenticated %}
               <li class="nav-item">

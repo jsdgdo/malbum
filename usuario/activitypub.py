@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from urllib.parse import urlparse
 import time
+from django.conf import settings
 
 def load_private_key():
     try:
@@ -488,3 +489,110 @@ def following(request, username):
     response["Access-Control-Allow-Origin"] = "*"
     
     return response 
+
+def search_users_remote(query):
+    """Search for users on remote instances"""
+    results = []
+    
+    # Get list of known instances from our followers/following
+    known_domains = set()
+    for follow in Follow.objects.all():
+        try:
+            domain = urlparse(follow.actor_url).netloc
+            known_domains.add(domain)
+        except:
+            continue
+    
+    print(f"Known domains: {known_domains}")  # Debug log
+    
+    # If no known domains, try to parse domain from query
+    if not known_domains and '@' in query:
+        try:
+            username, domain = query.lstrip('@').split('@')
+            known_domains.add(domain)
+            print(f"Added domain from query: {domain}")  # Debug log
+        except:
+            pass
+    
+    # Search on each known instance
+    for domain in known_domains:
+        try:
+            print(f"Searching on domain: {domain}")  # Debug log
+            
+            # Try WebFinger first
+            webfinger_url = f"https://{domain}/.well-known/webfinger"
+            headers = {
+                'Accept': 'application/json',
+                'User-Agent': f'MAlbum/1.0.0 (+https://{get_valor("dominio")})'
+            }
+            
+            # If query contains @, use it as is, otherwise construct acct URI
+            if '@' in query:
+                resource = f'acct:{query.lstrip("@")}'
+            else:
+                resource = f'acct:{query}@{domain}'
+            
+            params = {
+                'resource': resource
+            }
+            
+            print(f"WebFinger request: {webfinger_url} with resource: {resource}")  # Debug log
+            
+            response = requests.get(webfinger_url, headers=headers, params=params, timeout=5)
+            print(f"WebFinger response status: {response.status_code}")  # Debug log
+            
+            if response.status_code == 200:
+                webfinger_data = response.json()
+                print(f"WebFinger data: {webfinger_data}")  # Debug log
+                
+                ap_url = next((link['href'] for link in webfinger_data.get('links', []) 
+                             if link.get('type') == 'application/activity+json'), None)
+                
+                if ap_url:
+                    print(f"Found AP URL: {ap_url}")  # Debug log
+                    # Get ActivityPub profile
+                    ap_response = requests.get(ap_url, headers={'Accept': 'application/activity+json'})
+                    if ap_response.status_code == 200:
+                        profile = ap_response.json()
+                        results.append({
+                            'username': profile.get('preferredUsername', query),
+                            'nombreCompleto': profile.get('name', ''),
+                            'bio': profile.get('summary', ''),
+                            'actor_url': profile.get('id', ap_url),
+                            'avatar_url': profile.get('icon', {}).get('url', None),
+                            'is_remote': True,
+                            'domain': domain
+                        })
+                        continue
+
+            # Fallback to Mastodon API search
+            print("Falling back to Mastodon API search")  # Debug log
+            search_url = f"https://{domain}/api/v2/search"
+            params = {
+                'q': query.lstrip('@'),
+                'type': 'accounts',
+                'resolve': True
+            }
+            
+            response = requests.get(search_url, headers=headers, params=params, timeout=5)
+            print(f"Mastodon API response status: {response.status_code}")  # Debug log
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"Mastodon API data: {data}")  # Debug log
+                for account in data.get('accounts', []):
+                    results.append({
+                        'username': account.get('username'),
+                        'nombreCompleto': account.get('display_name'),
+                        'bio': account.get('note'),
+                        'actor_url': account.get('url'),
+                        'avatar_url': account.get('avatar'),
+                        'is_remote': True,
+                        'domain': domain
+                    })
+        except Exception as e:
+            print(f"Error searching on {domain}: {e}")
+            continue
+    
+    print(f"Final results: {results}")  # Debug log
+    return results 

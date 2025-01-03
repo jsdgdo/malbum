@@ -85,7 +85,9 @@ class Follow(models.Model):
     following = models.ForeignKey(
         Usuario, 
         on_delete=models.CASCADE, 
-        related_name='followers_set'
+        related_name='followers_set',
+        null=True,
+        blank=True
     )
     actor_url = models.URLField()
     remote_username = models.CharField(max_length=255)
@@ -93,8 +95,13 @@ class Follow(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('follower', 'following')
+        unique_together = [
+            ('follower', 'following'),
+            ('follower', 'actor_url')
+        ]
         
     def __str__(self):
-        return f"{self.actor_url} follows {self.following}"
+        if self.following:
+            return f"{self.follower} follows {self.following}"
+        return f"{self.follower} follows {self.remote_username}@{self.remote_domain}"
   

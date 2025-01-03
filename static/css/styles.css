@@ -55,3 +55,40 @@
 .rounded-circle {
     border: 1px solid rgba(0,0,0,.125);
 }
+
+.follow-button-container {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.follow-button-container button {
+    width: 100%;
+    max-width: 200px;
+}
+
+.search-result-card {
+    transition: transform 0.2s;
+}
+
+.search-result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.search-result-card .card-body {
+    padding: 1rem;
+}
+
+.search-result-card .bio {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Make search bar responsive */
+@media (max-width: 768px) {
+    .navbar .d-flex {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+}
