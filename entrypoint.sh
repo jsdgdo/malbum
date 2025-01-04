@@ -28,4 +28,4 @@ python manage.py collectstatic --noinput
 python manage.py migrate
 
 # Start Apache (as www-data)
-exec apache2ctl -DFOREGROUND
+exec apache2ctl -D FOREGROUND
