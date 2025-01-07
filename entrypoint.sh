@@ -21,6 +21,14 @@ chown www-data:www-data /code/config/config.json
 chown www-data:www-data /code/data
 chown www-data:www-data /code/config
 
+# Ensure Apache directories exist and have correct permissions
+mkdir -p /var/run/apache2
+mkdir -p /var/lock/apache2
+mkdir -p /var/log/apache2
+chown -R www-data:www-data /var/run/apache2
+chown -R www-data:www-data /var/lock/apache2
+chown -R www-data:www-data /var/log/apache2
+
 # Collect static files
 python manage.py collectstatic --noinput
 
