@@ -19,7 +19,7 @@ RUN pip install mod_wsgi
 
 # Configure mod_wsgi
 RUN mod_wsgi-express install-module
-RUN echo "LoadModule wsgi_module $(find /usr/lib/apache2/modules/ -name 'mod_wsgi*.so')" > /etc/apache2/mods-available/wsgi.load
+RUN echo "LoadModule wsgi_module $(find / -name 'mod_wsgi*.so' 2>/dev/null)" > /etc/apache2/mods-available/wsgi.load
 RUN a2enmod wsgi
 
 WORKDIR /code
@@ -49,6 +49,9 @@ RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles /code/
 COPY apache2.conf /etc/apache2/apache2.conf
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 RUN ln -sf /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
+
+# Debug: Show mod_wsgi location
+RUN find / -name 'mod_wsgi*.so' 2>/dev/null
 
 # Make entrypoint script executable
 RUN chmod +x /code/entrypoint.sh

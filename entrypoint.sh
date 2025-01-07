@@ -35,5 +35,12 @@ python manage.py collectstatic --noinput
 # Apply database migrations
 python manage.py migrate
 
+# Debug: Show mod_wsgi location
+echo "Looking for mod_wsgi.so:"
+find / -name 'mod_wsgi*.so' 2>/dev/null
+
+# Debug: Show loaded modules
+apache2ctl -M
+
 # Start Apache directly with our configuration
 exec apache2 -f /etc/apache2/apache2.conf -D FOREGROUND
