@@ -19,8 +19,10 @@ RUN pip install mod_wsgi
 
 # Configure mod_wsgi
 RUN mod_wsgi-express install-module
-RUN echo "LoadModule wsgi_module $(find / -name 'mod_wsgi*.so' 2>/dev/null)" > /etc/apache2/mods-available/wsgi.load
-RUN a2enmod wsgi
+RUN echo "LoadModule wsgi_module $(find / -name 'mod_wsgi*.so' 2>/dev/null | head -n 1)" > /etc/apache2/mods-available/wsgi.load
+
+# Set Apache environment variables
+ENV APACHE_LOG_DIR=/var/log/apache2
 
 WORKDIR /code
 
@@ -50,8 +52,9 @@ COPY apache2.conf /etc/apache2/apache2.conf
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 RUN ln -sf /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
 
-# Debug: Show mod_wsgi location
-RUN find / -name 'mod_wsgi*.so' 2>/dev/null
+# Make sure mod_wsgi is properly configured
+RUN mod_wsgi-express module-config > /etc/apache2/mods-available/wsgi.load && \
+    a2enmod wsgi
 
 # Make entrypoint script executable
 RUN chmod +x /code/entrypoint.sh
