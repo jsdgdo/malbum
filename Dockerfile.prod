@@ -22,14 +22,6 @@ RUN mod_wsgi-express install-module
 RUN echo "LoadModule wsgi_module $(find /usr/lib/apache2/modules/ -name 'mod_wsgi*.so')" > /etc/apache2/mods-available/wsgi.load
 RUN a2enmod wsgi
 
-# Set Apache environment variables
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
-ENV APACHE_RUN_DIR /var/run/apache2
-ENV APACHE_LOG_DIR /var/log/apache2
-ENV APACHE_LOCK_DIR /var/lock/apache2
-ENV APACHE_PID_FILE /var/run/apache2/apache2.pid
-
 WORKDIR /code
 
 # Copy project files
@@ -53,12 +45,10 @@ RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles /code/
     chmod -R 775 /code && \
     chmod 664 /code/data/db.sqlite3 /code/config/config.json
 
-# Copy Apache configuration
+# Copy Apache configurations
+COPY apache2.conf /etc/apache2/apache2.conf
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
-
-# Make sure Apache's default runtime directory exists
-RUN sed -i 's/${APACHE_RUN_DIR}/\/var\/run\/apache2/g' /etc/apache2/apache2.conf && \
-    sed -i 's/DefaultRuntimeDir \${APACHE_RUN_DIR}/DefaultRuntimeDir \/var\/run\/apache2/g' /etc/apache2/apache2.conf
+RUN ln -sf /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-enabled/000-default.conf
 
 # Make entrypoint script executable
 RUN chmod +x /code/entrypoint.sh

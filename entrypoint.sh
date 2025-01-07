@@ -35,16 +35,5 @@ python manage.py collectstatic --noinput
 # Apply database migrations
 python manage.py migrate
 
-# Debug: Show Apache version and modules
-apache2 -v
-apache2ctl -M
-
-# Debug: Check Apache configuration
-apache2ctl -t
-
-# Debug: Show permissions of key directories
-ls -la /var/run/apache2
-ls -la /var/log/apache2
-
-# Start Apache (as www-data)
-exec apache2 -D FOREGROUND
+# Start Apache directly with our configuration
+exec apache2 -f /etc/apache2/apache2.conf -D FOREGROUND
