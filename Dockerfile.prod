@@ -24,16 +24,16 @@ RUN a2enmod wsgi
 
 WORKDIR /code
 
-# Copy project files first
+# Copy project files
 COPY . .
 
 # Install Python dependencies
 RUN pip install -r requirements.txt
 
 # Create and set permissions for Apache directories
-RUN mkdir -p /var/run/apache2 /var/lock/apache2 && \
+RUN mkdir -p /var/run/apache2 /var/lock/apache2 /var/log/apache2 && \
     chown -R www-data:www-data /var/run/apache2 /var/lock/apache2 /var/log/apache2 && \
-    chmod -R 755 /var/run/apache2 /var/lock/apache2
+    chmod -R 755 /var/run/apache2 /var/lock/apache2 /var/log/apache2
 
 RUN a2enmod lbmethod_byrequests
 
@@ -47,6 +47,9 @@ RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles /code/
 
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
+
+# Make entrypoint script executable
+RUN chmod +x /code/entrypoint.sh
 
 # Switch to www-data user
 USER www-data
