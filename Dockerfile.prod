@@ -22,7 +22,9 @@ RUN apt-get update && apt-get install -y \
     libapache2-mod-wsgi-py3 \
     && a2enmod ssl \
     && a2enmod rewrite \
-    && a2enmod wsgi
+    && a2enmod wsgi \
+    && a2enmod headers \
+    && a2enmod socache_shmcb
 
 # Fix Apache configuration
 RUN sed -i 's/${APACHE_RUN_DIR}/\/var\/run\/apache2/g' /etc/apache2/apache2.conf && \
@@ -58,7 +60,7 @@ COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 USER www-data
 
 # Expose port
-EXPOSE 80
+EXPOSE 80 443
 
 # Start Apache
 CMD ["./entrypoint.sh"]

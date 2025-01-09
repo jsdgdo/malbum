@@ -50,6 +50,13 @@ cat /var/log/apache2/error.log
 echo "Testing Apache configuration:"
 apache2ctl -t
 
-# Start Apache with apache2ctl
-echo "Starting Apache..."
-exec apache2ctl -D FOREGROUND
+# Set environment variables for Apache
+export APACHE_RUN_USER=www-data
+export APACHE_RUN_GROUP=www-data
+export APACHE_RUN_DIR=/var/run/apache2
+export APACHE_LOG_DIR=/var/log/apache2
+export APACHE_LOCK_DIR=/var/lock/apache2
+export APACHE_PID_FILE=/var/run/apache2/apache2.pid
+
+echo "Starting Apache with debug info..."
+exec apache2 -X -e debug -D FOREGROUND
