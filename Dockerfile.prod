@@ -11,16 +11,10 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     python3-pil \
     python3-pil.imagetk \
+    libapache2-mod-wsgi-py3 \
     && a2enmod ssl \
-    && a2enmod rewrite
-
-# Install specific mod_wsgi version
-RUN pip install mod_wsgi==4.9.4
-
-# Configure mod_wsgi
-RUN mod_wsgi-express install-module
-RUN echo "LoadModule wsgi_module $(find /usr/lib/apache2/modules/ -name 'mod_wsgi*.so')" > /etc/apache2/mods-available/wsgi.load
-RUN a2enmod wsgi
+    && a2enmod rewrite \
+    && a2enmod wsgi
 
 WORKDIR /code
 
