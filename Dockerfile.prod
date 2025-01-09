@@ -1,11 +1,14 @@
-## Para usar este, correr `docker-compose -f docker-compose-prod.yml up`
+## Para usar este, correr `docker compose -f docker-compose-prod.yml up`
 
-FROM python:3.12
+FROM python:3.12-bullseye
 
-# Install Apache and dependencies
+# Add Debian repository for Apache 2.4.52
+RUN echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/debian-bullseye.list
+
+# Pin Apache version and dependencies
 RUN apt-get update && apt-get install -y \
-    apache2 \
-    apache2-dev \
+    apache2=2.4.52-1+deb11u2 \
+    apache2-dev=2.4.52-1+deb11u2 \
     libjpeg-dev \
     zlib1g-dev \
     libpng-dev \
@@ -14,8 +17,8 @@ RUN apt-get update && apt-get install -y \
     && a2enmod ssl \
     && a2enmod rewrite
 
-# Install mod_wsgi via pip
-RUN pip install mod_wsgi
+# Install specific mod_wsgi version
+RUN pip install mod_wsgi==4.9.4
 
 # Configure mod_wsgi
 RUN mod_wsgi-express install-module
