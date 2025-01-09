@@ -10,7 +10,7 @@ services:
       - .:/code
       - media_volume:/code/media
       - static_volume:/code/staticfiles
-      - ./certs:/etc/ssl/certs/malbum
+      - ./certs:/etc/ssl/certs/malbum:ro
       - sqlite_data:/code/data
       - config_data:/code/config
       - ./keys:/code/keys
@@ -33,12 +33,15 @@ services:
       - sqlite_data:/code/data
       - config_data:/code/config
       - ./keys:/code/keys
+      - ./certs:/etc/ssl/certs/malbum
     command: >
       sh -c "chown -R 33:33 /code/media &&
              chown -R 33:33 /code/staticfiles &&
              chown -R 33:33 /code/data &&
              chown -R 33:33 /code/config &&
-             chown -R 33:33 /code/keys"
+             chown -R 33:33 /code/keys &&
+             chown -R 33:33 /etc/ssl/certs/malbum &&
+             chmod -R 750 /etc/ssl/certs/malbum"
 
 volumes:
   media_volume:

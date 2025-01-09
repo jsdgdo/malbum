@@ -61,6 +61,11 @@ RUN mkdir -p /code/media/fotos /code/media/profile_pics /code/staticfiles /code/
     chmod -R 775 /code && \
     chmod 664 /code/data/db.sqlite3 /code/config/config.json
 
+# Create SSL certificate directory with correct permissions
+RUN mkdir -p /etc/ssl/certs/malbum && \
+    chown -R www-data:www-data /etc/ssl/certs/malbum && \
+    chmod -R 750 /etc/ssl/certs/malbum
+
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
