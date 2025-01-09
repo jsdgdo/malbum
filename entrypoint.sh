@@ -35,21 +35,6 @@ python manage.py collectstatic --noinput
 # Apply database migrations
 python manage.py migrate
 
-# Debug: Show mod_wsgi location
-echo "Looking for mod_wsgi.so:"
-find / -name 'mod_wsgi.so' 2>/dev/null
-
-# Debug: Show loaded modules
-apache2ctl -M
-
-# Debug: Show Apache error log if it exists
-echo "Apache error log contents:"
-cat /var/log/apache2/error.log
-
-# Debug: Test Apache configuration
-echo "Testing Apache configuration:"
-apache2ctl -t
-
 # Set environment variables for Apache
 export APACHE_RUN_USER=www-data
 export APACHE_RUN_GROUP=www-data
@@ -58,5 +43,5 @@ export APACHE_LOG_DIR=/var/log/apache2
 export APACHE_LOCK_DIR=/var/lock/apache2
 export APACHE_PID_FILE=/var/run/apache2/apache2.pid
 
-echo "Starting Apache with debug info..."
-exec apache2 -X -e debug -D FOREGROUND
+# Start Apache
+exec apache2 -D FOREGROUND
