@@ -37,7 +37,7 @@ python manage.py migrate
 
 # Debug: Show mod_wsgi location
 echo "Looking for mod_wsgi.so:"
-find / -name 'mod_wsgi.so'
+find / -name 'mod_wsgi.so' 2>/dev/null
 
 # Debug: Show loaded modules
 apache2ctl -M
@@ -50,5 +50,6 @@ cat /var/log/apache2/error.log
 echo "Testing Apache configuration:"
 apache2ctl -t
 
-# Start Apache directly with our configuration
-exec apache2 -D FOREGROUND
+# Start Apache with apache2ctl
+echo "Starting Apache..."
+exec apache2ctl -D FOREGROUND
