@@ -490,109 +490,149 @@ def following(request, username):
     
     return response 
 
+def discover_instances():
+    """Discover ActivityPub instances from various sources"""
+    instances = set()
+    
+    # Try fetching from instances.social API
+    try:
+        response = requests.get(
+            'https://instances.social/api/1.0/instances/list',
+            params={'count': 50, 'sort_by': 'users'},
+            headers={'Authorization': f'Bearer {settings.INSTANCES_SOCIAL_TOKEN}'},
+            timeout=5
+        )
+        if response.status_code == 200:
+            data = response.json()
+            for instance in data.get('instances', []):
+                instances.add(instance['name'])
+    except Exception as e:
+        print(f"Error fetching from instances.social: {e}")
+
+    # Add some well-known instances
+    default_instances = {
+        'mastodon.social',
+        'mastodon.design',
+        'fosstodon.org',
+        'social.linux.pizza',
+        'techhub.social'
+    }
+    instances.update(default_instances)
+    
+    return instances
+
 def search_users_remote(query):
-    """Search for users on remote instances"""
+    """Search for users across the fediverse"""
     results = []
     
-    # Get list of known instances from our followers/following
-    known_domains = set()
-    for follow in Follow.objects.all():
-        try:
-            domain = urlparse(follow.actor_url).netloc
-            known_domains.add(domain)
-        except:
-            continue
+    if '@' in query:
+        # Direct user@domain search
+        username, domain = query.split('@', 1)
+        print(f"Direct search for {username}@{domain}")
+        user_data = find_user_on_instance(username, domain)
+        if user_data:
+            results.append(user_data)
+    else:
+        # Search across discovered instances
+        instances = discover_instances()
+        print(f"Searching across {len(instances)} instances")
+        
+        for domain in instances:
+            try:
+                print(f"Searching on {domain}")
+                # Try WebFinger first
+                if len(query) >= 3:  # Only search if query is long enough
+                    domain_results = search_instance(query, domain)
+                    results.extend(domain_results)
+                    
+                    # Limit results to avoid too many requests
+                    if len(results) >= 20:
+                        break
+            except Exception as e:
+                print(f"Error searching {domain}: {e}")
+                continue
     
-    print(f"Known domains: {known_domains}")  # Debug log
-    
-    # If no known domains, try to parse domain from query
-    if not known_domains and '@' in query:
-        try:
-            username, domain = query.lstrip('@').split('@')
-            known_domains.add(domain)
-            print(f"Added domain from query: {domain}")  # Debug log
-        except:
-            pass
-    
-    # Search on each known instance
-    for domain in known_domains:
-        try:
-            print(f"Searching on domain: {domain}")  # Debug log
-            
-            # Try WebFinger first
-            webfinger_url = f"https://{domain}/.well-known/webfinger"
-            headers = {
-                'Accept': 'application/json',
-                'User-Agent': f'MAlbum/1.0.0 (+https://{get_valor("dominio")})'
-            }
-            
-            # If query contains @, use it as is, otherwise construct acct URI
-            if '@' in query:
-                resource = f'acct:{query.lstrip("@")}'
-            else:
-                resource = f'acct:{query}@{domain}'
-            
-            params = {
-                'resource': resource
-            }
-            
-            print(f"WebFinger request: {webfinger_url} with resource: {resource}")  # Debug log
-            
-            response = requests.get(webfinger_url, headers=headers, params=params, timeout=5)
-            print(f"WebFinger response status: {response.status_code}")  # Debug log
-            
-            if response.status_code == 200:
-                webfinger_data = response.json()
-                print(f"WebFinger data: {webfinger_data}")  # Debug log
-                
-                ap_url = next((link['href'] for link in webfinger_data.get('links', []) 
-                             if link.get('type') == 'application/activity+json'), None)
-                
-                if ap_url:
-                    print(f"Found AP URL: {ap_url}")  # Debug log
-                    # Get ActivityPub profile
-                    ap_response = requests.get(ap_url, headers={'Accept': 'application/activity+json'})
-                    if ap_response.status_code == 200:
-                        profile = ap_response.json()
-                        results.append({
-                            'username': profile.get('preferredUsername', query),
-                            'nombreCompleto': profile.get('name', ''),
-                            'bio': profile.get('summary', ''),
-                            'actor_url': profile.get('id', ap_url),
-                            'avatar_url': profile.get('icon', {}).get('url', None),
-                            'is_remote': True,
-                            'domain': domain
-                        })
-                        continue
+    return results
 
-            # Fallback to Mastodon API search
-            print("Falling back to Mastodon API search")  # Debug log
-            search_url = f"https://{domain}/api/v2/search"
-            params = {
-                'q': query.lstrip('@'),
+def search_instance(query, domain):
+    """Search for users on a specific instance"""
+    results = []
+    
+    try:
+        # Try Mastodon API search
+        search_url = f"https://{domain}/api/v2/search"
+        response = requests.get(
+            search_url,
+            params={
+                'q': query,
                 'type': 'accounts',
-                'resolve': True
-            }
+                'resolve': True,
+                'limit': 5
+            },
+            headers={
+                'Accept': 'application/json',
+                'User-Agent': f'MAlbum/1.0.0 (+https://{settings.DOMAIN})'
+            },
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            for account in data.get('accounts', []):
+                results.append({
+                    'username': account.get('username'),
+                    'nombreCompleto': account.get('display_name'),
+                    'bio': account.get('note'),
+                    'actor_url': account.get('url'),
+                    'avatar_url': account.get('avatar'),
+                    'is_remote': True,
+                    'domain': domain
+                })
+    except Exception as e:
+        print(f"Error searching {domain}: {e}")
+    
+    return results
+
+def find_user_on_instance(username, domain):
+    """Find a specific user on a specific instance"""
+    webfinger_url = f"https://{domain}/.well-known/webfinger"
+    resource = f"acct:{username}@{domain}"
+    
+    try:
+        response = requests.get(
+            webfinger_url,
+            params={'resource': resource},
+            headers={'User-Agent': f'MAlbum/1.0.0 (+https://{settings.DOMAIN})'},
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            ap_url = next(
+                (link['href'] for link in data.get('links', [])
+                 if link.get('type') == 'application/activity+json'),
+                None
+            )
             
-            response = requests.get(search_url, headers=headers, params=params, timeout=5)
-            print(f"Mastodon API response status: {response.status_code}")  # Debug log
-            
-            if response.status_code == 200:
-                data = response.json()
-                print(f"Mastodon API data: {data}")  # Debug log
-                for account in data.get('accounts', []):
-                    results.append({
-                        'username': account.get('username'),
-                        'nombreCompleto': account.get('display_name'),
-                        'bio': account.get('note'),
-                        'actor_url': account.get('url'),
-                        'avatar_url': account.get('avatar'),
+            if ap_url:
+                profile_response = requests.get(
+                    ap_url,
+                    headers={'Accept': 'application/activity+json'},
+                    timeout=5
+                )
+                
+                if profile_response.status_code == 200:
+                    profile = profile_response.json()
+                    return {
+                        'username': profile.get('preferredUsername', ''),
+                        'nombreCompleto': profile.get('name', ''),
+                        'bio': profile.get('summary', ''),
+                        'actor_url': profile.get('id', ''),
+                        'avatar_url': profile.get('icon', {}).get('url', ''),
                         'is_remote': True,
                         'domain': domain
-                    })
-        except Exception as e:
-            print(f"Error searching on {domain}: {e}")
-            continue
+                    }
+    except Exception as e:
+        print(f"Error in WebFinger request: {e}")
     
-    print(f"Final results: {results}")  # Debug log
-    return results 
+    return None 

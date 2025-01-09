@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-1)#c16_7jxnzm^(ome1i8hu-fd)p-y0vr4!^)m$hf0g0!6z9uj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['malbum.org', 'localhost', '127.0.0.1', '*']
 
 
 # Application definition
@@ -166,4 +166,8 @@ DEFAULT_FROM_EMAIL = 'malbum@example.com'
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = 'your-email@gmail.com'
 # EMAIL_HOST_PASSWORD = 'your-app-specific-password'
+
+DOMAIN = 'malbum.org'
+
+INSTANCES_SOCIAL_TOKEN = None  # Optional: Get a token from instances.social
 

@@ -16,7 +16,7 @@ urlpatterns = [
     path('recuperar-contrasena-completo/', auth_views.PasswordResetCompleteView.as_view(template_name='usuario/recuperar-contrasena-completo.html'), name='password_reset_complete'),
     path('<str:username>/follow/', views.follow_user, name='follow_user'),
     path('<str:username>/unfollow/', views.unfollow_user, name='unfollow_user'),
-    path('buscar/', views.search_users, name='buscar_usuarios'),
+    path('buscar/', views.buscar_usuarios, name='buscar_usuarios'),
     path('<str:username>/', views.perfil_usuario, name='perfil_usuario'),
 ]
 

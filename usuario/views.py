@@ -12,6 +12,8 @@ from django.contrib.auth.decorators import login_required
 from django.db import models
 from .activitypub import search_users_remote
 import json
+from django.conf import settings
+from django.db.models import Q
 
 
 def registrarUsuario(request):
@@ -117,15 +119,20 @@ def unfollow_user(request, username):
     
     return JsonResponse({'success': True})
 
-def search_users(request):
+def buscar_usuarios(request):
     query = request.GET.get('q', '').strip()
     results = []
     
     if query and len(query) >= 3:  # Only search for queries >= 3 chars
-        # Search remote users
-        results = search_users_remote(query)
-    
+        if '@' in query:
+            # Direct search for a specific user@domain
+            username, domain = query.split('@', 1)
+            results = search_users_remote(f"{username}@{domain}")
+        else:
+            # General search across known instances
+            results = search_users_remote(query)
+
     return render(request, 'usuario/resultados_busqueda.html', {
-        'users': results[:20],  # Limit total results to 20
-        'query': query
+        'query': query,
+        'users': results
     })
