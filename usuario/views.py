@@ -10,7 +10,7 @@ from malbum.models import Foto
 from malbum.config import get_default_config, save_config, get_valor
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from .activitypub import search_users_remote, send_follow_activity
+from .activitypub import search_users_remote
 import json
 
 
@@ -58,29 +58,53 @@ def perfil_usuario(request, username):
 @login_required
 @require_POST
 def follow_user(request, username):
-    try:
-        data = json.loads(request.body)
-        actor_url = data.get('actor_url')
-        remote_username = data.get('remote_username')
-        remote_domain = data.get('remote_domain')
-
-        # Create or get the Follow object
+    if '@' in username:
+        # Handle remote user
+        try:
+            data = json.loads(request.body)
+            actor_url = data.get('actor_url')
+            remote_username = data.get('remote_username')
+            remote_domain = data.get('remote_domain')
+            
+            if not all([actor_url, remote_username, remote_domain]):
+                return JsonResponse({'success': False, 'error': 'Datos incompletos'})
+            
+            # For remote users, following_id is None
+            follow, created = Follow.objects.get_or_create(
+                follower=request.user,
+                actor_url=actor_url,
+                defaults={
+                    'following': None,  # Explicitly set to None for remote users
+                    'remote_username': remote_username,
+                    'remote_domain': remote_domain
+                }
+            )
+            
+            if created:
+                # Send Follow activity to remote user
+                send_follow_activity(request.user, actor_url)
+            
+            return JsonResponse({'success': True})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Datos inválidos'})
+    else:
+        # Handle local user
+        user_to_follow = get_object_or_404(Usuario, username=username)
+        if request.user == user_to_follow:
+            return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
+        
         follow, created = Follow.objects.get_or_create(
             follower=request.user,
-            remote_username=remote_username,
-            remote_domain=remote_domain,
-            actor_url=actor_url
+            following=user_to_follow,
+            defaults={
+                'actor_url': f"https://{request.get_host()}/ap/{user_to_follow.username}",
+                'remote_username': user_to_follow.username,
+                'remote_domain': request.get_host()
+            }
         )
-
-        if created:
-            # Send ActivityPub follow request
-            send_follow_activity(request.user, actor_url)
-            return JsonResponse({'success': True})
-        else:
-            return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        
+        return JsonResponse({'success': True})
 
 @login_required
 @require_POST
