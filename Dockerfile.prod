@@ -2,13 +2,14 @@
 
 FROM python:3.12
 
-# Set Apache environment variables
+# Set Apache and Python environment variables
 ENV APACHE_RUN_USER www-data
 ENV APACHE_RUN_GROUP www-data
 ENV APACHE_RUN_DIR /var/run/apache2
 ENV APACHE_LOG_DIR /var/log/apache2
 ENV APACHE_LOCK_DIR /var/lock/apache2
 ENV APACHE_PID_FILE /var/run/apache2/apache2.pid
+ENV PYTHONPATH /usr/local/lib/python3.12:/usr/local/lib/python3.12/lib-dynload:/usr/local/lib/python3.12/site-packages
 
 # Install Apache and dependencies
 RUN apt-get update && apt-get install -y \
@@ -59,7 +60,7 @@ COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 # Switch to www-data user
 USER www-data
 
-# Expose port
+# Expose ports
 EXPOSE 80 443
 
 # Start Apache
