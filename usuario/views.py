@@ -14,6 +14,7 @@ from .activitypub import search_users_remote, fetch_remote_posts
 import json
 from django.conf import settings
 from django.db.models import Q
+import requests
 
 
 def registrarUsuario(request):
@@ -207,3 +208,102 @@ def buscar_usuarios(request):
         'query': query,
         'users': results
     })
+
+def fetch_remote_posts(actor_url):
+    """Fetch posts from a remote user's outbox"""
+    print(f"\nFetching posts from {actor_url}")
+    
+    # First get the actor info to find their outbox
+    print("Getting actor info...")
+    headers = {
+        'Accept': 'application/activity+json',
+        'User-Agent': 'MAlbum/1.0 (+https://malbum.org)'
+    }
+    print(f"Using headers: {headers}")
+    
+    try:
+        # Get actor info
+        response = requests.get(actor_url, headers=headers)
+        print(f"Actor response status: {response.status_code}")
+        print(f"Actor response headers: {response.headers}")
+        print(f"Actor response content: {response.text[:500]}...")
+        
+        if response.status_code != 200:
+            print(f"Error getting actor info: {response.status_code}")
+            return []
+            
+        actor_data = response.json()
+        outbox_url = actor_data.get('outbox')
+        print(f"Found outbox URL: {outbox_url}")
+        
+        if not outbox_url:
+            print("No outbox URL found")
+            return []
+            
+        # Get the outbox
+        print(f"Getting outbox from {outbox_url}")
+        response = requests.get(outbox_url, headers=headers)
+        print(f"Outbox response status: {response.status_code}")
+        print(f"Outbox response headers: {response.headers}")
+        print(f"Outbox response content: {response.text[:500]}...")
+        
+        if response.status_code != 200:
+            print(f"Error getting outbox: {response.status_code}")
+            return []
+            
+        outbox_data = response.json()
+        
+        # Get the first page if this is a collection
+        if outbox_data.get('type') == 'OrderedCollection':
+            first_page_url = outbox_data.get('first')
+            if first_page_url:
+                print("Getting first page of outbox")
+                response = requests.get(first_page_url, headers=headers)
+                print(f"First page response status: {response.status_code}")
+                if response.status_code == 200:
+                    outbox_data = response.json()
+        
+        # Process the items
+        items = outbox_data.get('orderedItems', [])
+        print(f"Found {len(items)} items")
+        
+        posts = []
+        for item in items:
+            try:
+                # Only process Create activities with Note objects
+                if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Note':
+                    obj = item['object']
+                    
+                    # Look for image attachments
+                    attachments = obj.get('attachment', [])
+                    image_urls = [
+                        att['url'] for att in attachments 
+                        if att.get('mediaType', '').startswith('image/')
+                    ]
+                    
+                    if image_urls:  # Only process posts with images
+                        post = {
+                            'remote_id': obj['id'],
+                            'actor_url': item['actor'],
+                            'content': obj.get('content', ''),
+                            'image_url': image_urls[0],  # Use first image
+                            'published': obj.get('published')
+                        }
+                        print(f"Found post: {post}")
+                        posts.append(post)
+                    else:
+                        print(f"No images found in post {obj['id']}")
+                else:
+                    print(f"Skipping non-Note activity: {item.get('type')} - {item.get('object', {}).get('type')}")
+            except Exception as e:
+                print(f"Error processing item: {e}")
+                print(f"Item content: {item}")
+                
+        print(f"Returning {len(posts)} posts")
+        return posts
+        
+    except Exception as e:
+        print(f"Error fetching posts: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
