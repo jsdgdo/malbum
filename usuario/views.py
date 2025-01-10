@@ -136,6 +136,19 @@ def unfollow_user(request, username):
     
     return JsonResponse({'success': True})
 
+def search_users_remote(query):
+    """Search for remote users"""
+    if '@' in query:
+        username, domain = query.split('@')
+        return [{
+            'username': username,
+            'name': username,
+            'domain': domain,
+            'is_local': False
+        }]
+    return []
+
+@login_required
 def buscar_usuarios(request):
     query = request.GET.get('q', '')
     results = []
@@ -154,7 +167,13 @@ def buscar_usuarios(request):
                     'error': 'No puedes seguirte a ti mismo'
                 })
                 
-            results = search_users_remote(username, domain)
+            # For remote users, just create a single result
+            results = [{
+                'username': username,
+                'name': username,
+                'domain': domain,
+                'is_local': False
+            }]
         else:
             # Local user search
             local_users = Usuario.objects.filter(
