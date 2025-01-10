@@ -26,6 +26,7 @@ from django.urls import reverse
 from django.db.models import Q
 from .config import get_valor, set_valor, get_default_config, save_config, load_config
 from usuario.activitypub import notify_followers_of_new_post
+from django.db.models import Follow
 
 def inicio(request):
   if request.user.is_authenticated:
@@ -77,20 +78,34 @@ def agregar_coleccion(request):
 
 @login_required
 def tablon(request):
-    if request.user.is_authenticated:
-        # Get list of users being followed
-        following_users = request.user.following.all().values_list('following', flat=True)
-        
-        # Get photos from followed users and the user themselves
-        fotos = Foto.objects.filter(
-            Q(usuario=request.user) |  # User's own photos
-            Q(usuario__in=following_users)  # Photos from followed users
-        ).order_by('-fecha_subida')
-    else:
-        # For non-authenticated users, show all photos
-        fotos = Foto.objects.all().order_by('-fecha_subida')
+    # Get IDs of local users being followed
+    following_local = Follow.objects.filter(
+        follower=request.user,
+        following__isnull=False
+    ).values_list('following', flat=True)
     
-    return render(request, 'tablon.html', {'fotos': fotos})
+    # Get photos from followed users and the user themselves
+    fotos = Foto.objects.filter(
+        Q(usuario=request.user) |  # User's own photos
+        Q(usuario__in=following_local)  # Photos from followed local users
+    ).order_by('-fecha_subida')
+    
+    etiqueta = request.GET.get('etiqueta')
+    coleccion = request.GET.get('coleccion')
+
+    if etiqueta:
+        fotos = fotos.filter(etiquetas__nombre=etiqueta)
+    if coleccion:
+        fotos = fotos.filter(colecciones__titulo=coleccion)
+    
+    context = { 
+        'fotos': fotos,
+        'etiquetas': Etiqueta.objects.all(),
+        'colecciones': Coleccion.objects.all(),
+        'etiqueta_seleccionada': etiqueta,
+        'coleccion_seleccionada': coleccion
+    }
+    return render(request, 'tablon.html', context)
 
 def detalle_foto(request, id):
   hay_usuario = Usuario.objects.exists()

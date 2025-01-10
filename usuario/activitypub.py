@@ -636,3 +636,9 @@ def find_user_on_instance(username, domain):
         print(f"Error in WebFinger request: {e}")
     
     return None 
+
+def send_follow_activity(user, target_actor_url):
+    """Send a Follow activity to a remote user"""
+    # This is a placeholder - implement actual ActivityPub follow protocol here
+    print(f"Would send Follow activity from {user} to {target_actor_url}")
+    pass  # For now, just pass since we haven't implemented ActivityPub protocol yet 

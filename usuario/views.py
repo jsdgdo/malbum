@@ -10,7 +10,7 @@ from malbum.models import Foto
 from malbum.config import get_default_config, save_config, get_valor
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from .activitypub import search_users_remote
+from .activitypub import search_users_remote, send_follow_activity
 import json
 from django.conf import settings
 from django.db.models import Q
@@ -74,17 +74,20 @@ def follow_user(request, username):
             # For remote users, following_id is None
             follow, created = Follow.objects.get_or_create(
                 follower=request.user,
-                actor_url=actor_url,
+                remote_username=remote_username,
+                remote_domain=remote_domain,
                 defaults={
-                    'following': None,  # Explicitly set to None for remote users
-                    'remote_username': remote_username,
-                    'remote_domain': remote_domain
+                    'following': None,
+                    'actor_url': actor_url
                 }
             )
             
             if created:
-                # Send Follow activity to remote user
-                send_follow_activity(request.user, actor_url)
+                try:
+                    send_follow_activity(request.user, actor_url)
+                except Exception as e:
+                    print(f"Error sending follow activity: {e}")
+                    # Continue anyway since we created the follow relationship
             
             return JsonResponse({'success': True})
             
@@ -98,12 +101,7 @@ def follow_user(request, username):
         
         follow, created = Follow.objects.get_or_create(
             follower=request.user,
-            following=user_to_follow,
-            defaults={
-                'actor_url': f"https://{request.get_host()}/ap/{user_to_follow.username}",
-                'remote_username': user_to_follow.username,
-                'remote_domain': request.get_host()
-            }
+            following=user_to_follow
         )
         
         return JsonResponse({'success': True})
@@ -111,11 +109,21 @@ def follow_user(request, username):
 @login_required
 @require_POST
 def unfollow_user(request, username):
-    user_to_unfollow = get_object_or_404(Usuario, username=username)
-    Follow.objects.filter(
-        follower=request.user,
-        following=user_to_unfollow
-    ).delete()
+    if '@' in username:
+        # Handle remote user
+        username, domain = username.split('@', 1)
+        Follow.objects.filter(
+            follower=request.user,
+            remote_username=username,
+            remote_domain=domain
+        ).delete()
+    else:
+        # Handle local user
+        user_to_unfollow = get_object_or_404(Usuario, username=username)
+        Follow.objects.filter(
+            follower=request.user,
+            following=user_to_unfollow
+        ).delete()
     
     return JsonResponse({'success': True})
 
