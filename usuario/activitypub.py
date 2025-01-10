@@ -645,55 +645,79 @@ def send_follow_activity(user, target_actor_url):
 
 def fetch_remote_posts(actor_url):
     """Fetch posts from a remote user's outbox"""
+    print(f"\nFetching posts from {actor_url}")
     try:
         # First get the actor info
+        print("Getting actor info...")
         response = requests.get(
             actor_url,
-            headers={'Accept': 'application/activity+json'}
+            headers={
+                'Accept': 'application/activity+json',
+                'User-Agent': 'MAlbum/1.0'
+            }
         )
+        print(f"Actor response status: {response.status_code}")
         if response.status_code != 200:
+            print(f"Error response: {response.text}")
             return []
             
         actor = response.json()
+        print(f"Actor data: {actor}")
         outbox_url = actor.get('outbox')
         
         if not outbox_url:
+            print("No outbox URL found")
             return []
             
         # Get the outbox
+        print(f"Getting outbox from {outbox_url}")
         outbox_response = requests.get(
             outbox_url,
-            headers={'Accept': 'application/activity+json'}
+            headers={
+                'Accept': 'application/activity+json',
+                'User-Agent': 'MAlbum/1.0'
+            }
         )
+        print(f"Outbox response status: {outbox_response.status_code}")
         
         if outbox_response.status_code != 200:
+            print(f"Error response: {outbox_response.text}")
             return []
             
         outbox = outbox_response.json()
+        print(f"Outbox data: {outbox}")
         
         # Process items/orderedItems
         items = outbox.get('orderedItems', [])
         if not items and 'first' in outbox:
-            # Get the first page if paginated
+            print("Getting first page of outbox")
             first_page_response = requests.get(
                 outbox['first'],
-                headers={'Accept': 'application/activity+json'}
+                headers={
+                    'Accept': 'application/activity+json',
+                    'User-Agent': 'MAlbum/1.0'
+                }
             )
             if first_page_response.status_code == 200:
                 items = first_page_response.json().get('orderedItems', [])
         
+        print(f"Found {len(items)} items")
         posts = []
         for item in items:
+            print(f"\nProcessing item: {item}")
             if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Image':
                 obj = item['object']
-                posts.append({
+                post_data = {
                     'remote_id': obj['id'],
                     'actor_url': actor_url,
                     'content': obj.get('content', ''),
                     'image_url': obj.get('url') or obj.get('attachment', [{}])[0].get('url', ''),
                     'published': obj.get('published')
-                })
+                }
+                print(f"Found post: {post_data}")
+                posts.append(post_data)
         
+        print(f"Returning {len(posts)} posts")
         return posts
                 
     except Exception as e:

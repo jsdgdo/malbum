@@ -83,12 +83,24 @@ def follow_user(request, username):
             )
             
             if created:
-                try:
-                    send_follow_activity(request.user, actor_url)
-                except Exception as e:
-                    print(f"Error sending follow activity: {e}")
-                    # Continue anyway since we created the follow relationship
-            
+                # Fetch their posts immediately
+                print(f"Fetching posts for new follow: {actor_url}")
+                posts = fetch_remote_posts(actor_url)
+                print(f"Found {len(posts)} posts")
+                for post_data in posts:
+                    try:
+                        RemotePost.objects.get_or_create(
+                            remote_id=post_data['remote_id'],
+                            defaults={
+                                'actor_url': post_data['actor_url'],
+                                'content': post_data['content'],
+                                'image_url': post_data['image_url'],
+                                'published': post_data['published']
+                            }
+                        )
+                    except Exception as e:
+                        print(f"Error saving post: {e}")
+                
             return JsonResponse({'success': True})
             
         except json.JSONDecodeError:
