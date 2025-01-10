@@ -80,7 +80,7 @@ def tablon(request):
     fotos_locales = Foto.objects.filter(
         Q(usuario=request.user) | 
         Q(usuario__in=request.user.following.all())
-    ).order_by('-fecha_creacion')
+    ).order_by('-fecha_subida')
     
     # Get remote posts from users we follow
     follows = Follow.objects.filter(follower=request.user, following__isnull=True)
@@ -89,7 +89,7 @@ def tablon(request):
     # Combine and sort
     fotos = sorted(
         chain(fotos_locales, remote_posts),
-        key=lambda x: x.fecha_creacion if hasattr(x, 'fecha_creacion') else x.published,
+        key=lambda x: x.fecha_subida if hasattr(x, 'fecha_subida') else x.published,
         reverse=True
     )
     
