@@ -86,10 +86,16 @@ def tablon(request):
     print(f"Found {fotos_locales.count()} local photos")
     
     # Get remote posts from users we follow
-    follows = Follow.objects.filter(follower=request.user, following__isnull=True)
+    follows = Follow.objects.filter(
+        follower=request.user,
+        following__isnull=True,
+        actor_url__isnull=False
+    )
     print(f"Found {follows.count()} remote follows: {[f.actor_url for f in follows]}")
     
-    remote_posts = RemotePost.objects.filter(actor_url__in=follows.values_list('actor_url', flat=True))
+    remote_posts = RemotePost.objects.filter(
+        actor_url__in=follows.values_list('actor_url', flat=True)
+    ).order_by('-published')
     print(f"Found {remote_posts.count()} remote posts")
     
     # Combine and sort

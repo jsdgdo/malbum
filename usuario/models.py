@@ -82,23 +82,11 @@ def get_default_user():
     return user.id
 
 class Follow(models.Model):
-    follower = models.ForeignKey(
-        Usuario, 
-        on_delete=models.CASCADE, 
-        related_name='following_set'
-    )
-    following = models.ForeignKey(
-        Usuario, 
-        on_delete=models.CASCADE, 
-        related_name='followers_set',
-        null=True,
-        blank=True
-    )
-    actor_url = models.URLField()
-    remote_username = models.CharField(max_length=255)
-    remote_domain = models.CharField(max_length=255)
+    follower = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='following_set')
+    following = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True, related_name='followers_set')
+    actor_url = models.URLField(max_length=500, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     class Meta:
         unique_together = [
             ('follower', 'following'),
@@ -108,7 +96,7 @@ class Follow(models.Model):
     def __str__(self):
         if self.following:
             return f"{self.follower} follows {self.following}"
-        return f"{self.follower} follows {self.remote_username}@{self.remote_domain}"
+        return f"{self.follower} follows {self.actor_url}"
   
 class RemotePost(models.Model):
     remote_id = models.CharField(max_length=500, unique=True)

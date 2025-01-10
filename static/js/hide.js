@@ -49,3 +49,43 @@ document.addEventListener('visibilitychange', () => {
     applyHiddenState();
   }
 });
+
+function followUser(username, isLocal) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const followBtn = document.querySelector(`[data-username="${username}"]`);
+    
+    if (!followBtn) {
+        console.error('Follow button not found');
+        return;
+    }
+    
+    fetch(`/usuario/follow/${username}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button text and state
+            if (followBtn.textContent.trim() === 'Seguir') {
+                followBtn.textContent = 'Dejar de seguir';
+                followBtn.classList.remove('btn-primary');
+                followBtn.classList.add('btn-secondary');
+            } else {
+                followBtn.textContent = 'Seguir';
+                followBtn.classList.remove('btn-secondary');
+                followBtn.classList.add('btn-primary');
+            }
+        } else {
+            alert(data.error || 'Error al seguir/dejar de seguir al usuario');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+    });
+}

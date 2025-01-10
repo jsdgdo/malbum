@@ -65,39 +65,53 @@ def follow_user(request, username):
     # Parse username and domain
     if '@' in username:
         username, domain = username.split('@')
+        
+        # Don't allow following yourself
+        if domain == settings.ACTIVITYPUB_DOMAIN and username == request.user.username:
+            return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
+            
         actor_url = f"https://{domain}/ap/{username}"
         print(f"Following remote user at: {actor_url}")
         
-        # Create or get follow relationship
-        follow, created = Follow.objects.get_or_create(
+        # Check if already following
+        follow = Follow.objects.filter(
+            follower=request.user,
+            actor_url=actor_url
+        ).first()
+        
+        if follow:
+            # Unfollow
+            follow.delete()
+            print("Unfollowed user")
+            return JsonResponse({'success': True})
+        
+        # Create new follow
+        follow = Follow.objects.create(
             follower=request.user,
             actor_url=actor_url
         )
+        print("New follow created")
         
-        if created:
-            print("New follow created")
-            # Fetch their posts immediately
-            posts = fetch_remote_posts(actor_url)
-            print(f"Found {len(posts)} posts")
-            for post_data in posts:
-                try:
-                    print(f"Creating/updating post: {post_data['remote_id']}")
-                    RemotePost.objects.get_or_create(
-                        remote_id=post_data['remote_id'],
-                        defaults={
-                            'actor_url': post_data['actor_url'],
-                            'content': post_data['content'],
-                            'image_url': post_data['image_url'],
-                            'published': post_data['published']
-                        }
-                    )
-                except Exception as e:
-                    print(f"Error saving post: {e}")
-                    import traceback
-                    traceback.print_exc()
-        else:
-            print("Already following this user")
-            
+        # Fetch their posts immediately
+        posts = fetch_remote_posts(actor_url)
+        print(f"Found {len(posts)} posts")
+        for post_data in posts:
+            try:
+                print(f"Creating/updating post: {post_data['remote_id']}")
+                RemotePost.objects.get_or_create(
+                    remote_id=post_data['remote_id'],
+                    defaults={
+                        'actor_url': post_data['actor_url'],
+                        'content': post_data['content'],
+                        'image_url': post_data['image_url'],
+                        'published': post_data['published']
+                    }
+                )
+            except Exception as e:
+                print(f"Error saving post: {e}")
+                import traceback
+                traceback.print_exc()
+                
     return JsonResponse({'success': True})
 
 @login_required
@@ -122,26 +136,51 @@ def unfollow_user(request, username):
     return JsonResponse({'success': True})
 
 def buscar_usuarios(request):
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get('q', '')
     results = []
     
-    if query and len(query) >= 3:  # Only search for queries >= 3 chars
+    if query:
         if '@' in query:
-            # Direct search for a specific user@domain
-            username, domain = query.split('@', 1)
-            results = search_users_remote(f"{username}@{domain}")
+            # Direct search for remote user
+            print(f"Direct search for {query}")
+            username, domain = query.split('@')
+            
+            # Don't allow following yourself
+            if domain == settings.ACTIVITYPUB_DOMAIN and username == request.user.username:
+                return render(request, 'usuario/resultados_busqueda.html', {
+                    'query': query,
+                    'error': 'No puedes seguirte a ti mismo'
+                })
+                
+            results = search_users_remote(username, domain)
         else:
-            # General search across known instances
-            results = search_users_remote(query)
+            # Local user search
+            local_users = Usuario.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query)
+            ).exclude(id=request.user.id)  # Exclude yourself
+            
+            results = [{
+                'username': user.username,
+                'name': user.get_full_name(),
+                'domain': settings.ACTIVITYPUB_DOMAIN,
+                'is_local': True
+            } for user in local_users]
             
         # Add follow status for each user if the requester is authenticated
         if request.user.is_authenticated:
             for user in results:
-                user['is_followed'] = Follow.objects.filter(
-                    follower=request.user,
-                    remote_username=user['username'],
-                    remote_domain=user['domain']
-                ).exists()
+                if user.get('is_local'):
+                    user['is_followed'] = Follow.objects.filter(
+                        follower=request.user,
+                        following__username=user['username']
+                    ).exists()
+                else:
+                    user['is_followed'] = Follow.objects.filter(
+                        follower=request.user,
+                        actor_url=f"https://{user['domain']}/ap/{user['username']}"
+                    ).exists()
 
     return render(request, 'usuario/resultados_busqueda.html', {
         'query': query,
