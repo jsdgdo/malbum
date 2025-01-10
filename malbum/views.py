@@ -7,12 +7,11 @@ from .models import Foto, Etiqueta, Coleccion, SolicitudImagen, Configuracion
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.serializers.json import DjangoJSONEncoder
-import json
-from django.http import HttpResponse
 from django.contrib.admin.views.decorators import staff_member_required
-from malbum.models import Foto, Etiqueta, Coleccion
-from usuario.models import Usuario
+from usuario.models import Usuario, Follow
 from django.db import connection
+from django.db.models import Q
+import json
 import os
 import zipfile
 from io import BytesIO
@@ -23,10 +22,8 @@ from django.utils import timezone
 import uuid
 from django.contrib import messages
 from django.urls import reverse
-from django.db.models import Q
 from .config import get_valor, set_valor, get_default_config, save_config, load_config
 from usuario.activitypub import notify_followers_of_new_post
-from django.db.models import Follow
 
 def inicio(request):
   if request.user.is_authenticated:
