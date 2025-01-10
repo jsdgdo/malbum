@@ -42,10 +42,17 @@
                                     <a href="{{ user.actor_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
                                         Ver perfil
                                     </a>
-                                    <button class="btn btn-sm btn-primary" 
-                                            onclick="followRemoteUser('{{ user.username }}', '{{ user.domain }}', '{{ user.actor_url }}')">
-                                        Seguir
-                                    </button>
+                                    {% if user.is_followed %}
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="unfollowUser('{{ user.username }}', '{{ user.domain }}')">
+                                            Dejar de seguir
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-primary" 
+                                                onclick="followUser('{{ user.username }}', '{{ user.domain }}', '{{ user.actor_url }}')">
+                                            Seguir
+                                        </button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -59,7 +66,7 @@
 </div>
 
 <script>
-function followRemoteUser(username, domain, actorUrl) {
+function followUser(username, domain, actorUrl) {
     fetch(`/usuario/${username}@${domain}/follow/`, {
         method: 'POST',
         headers: {
@@ -75,7 +82,7 @@ function followRemoteUser(username, domain, actorUrl) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Usuario seguido exitosamente');
+            location.reload();  // Reload to update buttons
         } else {
             alert(data.error || 'Error al seguir al usuario');
         }
@@ -84,6 +91,29 @@ function followRemoteUser(username, domain, actorUrl) {
         console.error('Error:', error);
         alert('Error al procesar la solicitud');
     });
+}
+
+function unfollowUser(username, domain) {
+    if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
+        fetch(`/usuario/${username}@${domain}/unfollow/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();  // Reload to update buttons
+            } else {
+                alert(data.error || 'Error al dejar de seguir al usuario');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
 }
 </script>
 {% endblock %} 

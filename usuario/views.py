@@ -131,6 +131,15 @@ def buscar_usuarios(request):
         else:
             # General search across known instances
             results = search_users_remote(query)
+            
+        # Add follow status for each user if the requester is authenticated
+        if request.user.is_authenticated:
+            for user in results:
+                user['is_followed'] = Follow.objects.filter(
+                    follower=request.user,
+                    remote_username=user['username'],
+                    remote_domain=user['domain']
+                ).exists()
 
     return render(request, 'usuario/resultados_busqueda.html', {
         'query': query,
