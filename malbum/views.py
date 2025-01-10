@@ -76,40 +76,26 @@ def agregar_coleccion(request):
 
 @login_required
 def tablon(request):
-    # Get IDs of local users being followed
-    following_local = Follow.objects.filter(
-        follower=request.user,
-        following__isnull=False
-    ).values_list('following', flat=True)
-    
-    # Get actor URLs of remote users being followed
-    following_remote = Follow.objects.filter(
-        follower=request.user,
-        following__isnull=True
-    ).values_list('actor_url', flat=True)
-    
     # Get local photos
-    local_photos = Foto.objects.filter(
-        Q(usuario=request.user) |  # User's own photos
-        Q(usuario__in=following_local)  # Photos from followed local users
-    )
+    fotos_locales = Foto.objects.filter(
+        Q(usuario=request.user) | 
+        Q(usuario__in=request.user.following.all())
+    ).order_by('-fecha_creacion')
     
-    # Get remote photos
-    remote_photos = RemotePost.objects.filter(
-        actor_url__in=following_remote
-    )
+    # Get remote posts from users we follow
+    follows = Follow.objects.filter(follower=request.user, following__isnull=True)
+    remote_posts = RemotePost.objects.filter(actor_url__in=follows.values_list('actor_url', flat=True))
     
-    # Combine and sort both querysets
-    all_photos = sorted(
-        chain(local_photos, remote_photos),
-        key=lambda x: x.fecha_subida if hasattr(x, 'fecha_subida') else x.published,
+    # Combine and sort
+    fotos = sorted(
+        chain(fotos_locales, remote_posts),
+        key=lambda x: x.fecha_creacion if hasattr(x, 'fecha_creacion') else x.published,
         reverse=True
     )
     
     context = {
-        'fotos': all_photos,
-        'etiquetas': Etiqueta.objects.all(),
-        'colecciones': Coleccion.objects.all(),
+        'fotos': fotos,
+        'usuario': request.user,
     }
     return render(request, 'tablon.html', context)
 
