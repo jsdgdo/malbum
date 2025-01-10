@@ -119,31 +119,9 @@ class RemotePost(models.Model):
     published = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(default=timezone.now)
     
-    def download_image(self):
-        """Download the remote image if we don't have it locally"""
-        if self.image_url and not self.local_image:
-            try:
-                response = requests.get(self.image_url, stream=True)
-                if response.status_code == 200:
-                    # Get the filename from the URL
-                    file_name = os.path.basename(urlparse(self.image_url).path)
-                    if not file_name:
-                        file_name = f"remote_image_{self.id}.jpg"
-                        
-                    # Create a temporary file
-                    img_temp = NamedTemporaryFile(delete=True)
-                    img_temp.write(response.content)
-                    img_temp.flush()
-                    
-                    # Save the image
-                    self.local_image.save(file_name, File(img_temp), save=True)
-            except Exception as e:
-                print(f"Error downloading image: {e}")
-    
-    def save(self, *args, **kwargs):
-        if self._state.adding:
-            self.created_at = timezone.now()
-        super().save(*args, **kwargs)
-        if self._state.adding:
-            self.download_image()
+    class Meta:
+        ordering = ['-published']
+        
+    def __str__(self):
+        return f"Post {self.remote_id} from {self.actor_url}"
   

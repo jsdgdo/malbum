@@ -60,63 +60,45 @@ def perfil_usuario(request, username):
 @login_required
 @require_POST
 def follow_user(request, username):
+    print(f"\nFollowing user: {username}")
+    
+    # Parse username and domain
     if '@' in username:
-        # Handle remote user
-        try:
-            data = json.loads(request.body)
-            actor_url = data.get('actor_url')
-            remote_username = data.get('remote_username')
-            remote_domain = data.get('remote_domain')
-            
-            if not all([actor_url, remote_username, remote_domain]):
-                return JsonResponse({'success': False, 'error': 'Datos incompletos'})
-            
-            # For remote users, following_id is None
-            follow, created = Follow.objects.get_or_create(
-                follower=request.user,
-                remote_username=remote_username,
-                remote_domain=remote_domain,
-                defaults={
-                    'following': None,
-                    'actor_url': actor_url
-                }
-            )
-            
-            if created:
-                # Fetch their posts immediately
-                print(f"Fetching posts for new follow: {actor_url}")
-                posts = fetch_remote_posts(actor_url)
-                print(f"Found {len(posts)} posts")
-                for post_data in posts:
-                    try:
-                        RemotePost.objects.get_or_create(
-                            remote_id=post_data['remote_id'],
-                            defaults={
-                                'actor_url': post_data['actor_url'],
-                                'content': post_data['content'],
-                                'image_url': post_data['image_url'],
-                                'published': post_data['published']
-                            }
-                        )
-                    except Exception as e:
-                        print(f"Error saving post: {e}")
-                
-            return JsonResponse({'success': True})
-            
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Datos inválidos'})
-    else:
-        # Handle local user
-        user_to_follow = get_object_or_404(Usuario, username=username)
-        if request.user == user_to_follow:
-            return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
+        username, domain = username.split('@')
+        actor_url = f"https://{domain}/ap/{username}"
+        print(f"Following remote user at: {actor_url}")
         
+        # Create or get follow relationship
         follow, created = Follow.objects.get_or_create(
             follower=request.user,
-            following=user_to_follow
+            actor_url=actor_url
         )
         
-        return JsonResponse({'success': True})
+        if created:
+            print("New follow created")
+            # Fetch their posts immediately
+            posts = fetch_remote_posts(actor_url)
+            print(f"Found {len(posts)} posts")
+            for post_data in posts:
+                try:
+                    print(f"Creating/updating post: {post_data['remote_id']}")
+                    RemotePost.objects.get_or_create(
+                        remote_id=post_data['remote_id'],
+                        defaults={
+                            'actor_url': post_data['actor_url'],
+                            'content': post_data['content'],
+                            'image_url': post_data['image_url'],
+                            'published': post_data['published']
+                        }
+                    )
+                except Exception as e:
+                    print(f"Error saving post: {e}")
+                    import traceback
+                    traceback.print_exc()
+        else:
+            print("Already following this user")
+            
+    return JsonResponse({'success': True})
 
 @login_required
 @require_POST
