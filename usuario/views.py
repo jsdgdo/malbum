@@ -67,7 +67,8 @@ def follow_user(request, username):
         username, domain = username.split('@')
         
         # Don't allow following yourself
-        if domain == settings.ACTIVITYPUB_DOMAIN and username == request.user.username:
+        local_domain = get_valor('domain')
+        if domain == local_domain and username == request.user.username:
             return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
             
         actor_url = f"https://{domain}/ap/{username}"
@@ -146,7 +147,8 @@ def buscar_usuarios(request):
             username, domain = query.split('@')
             
             # Don't allow following yourself
-            if domain == settings.ACTIVITYPUB_DOMAIN and username == request.user.username:
+            local_domain = get_valor('domain')
+            if domain == local_domain and username == request.user.username:
                 return render(request, 'usuario/resultados_busqueda.html', {
                     'query': query,
                     'error': 'No puedes seguirte a ti mismo'
@@ -164,7 +166,7 @@ def buscar_usuarios(request):
             results = [{
                 'username': user.username,
                 'name': user.get_full_name(),
-                'domain': settings.ACTIVITYPUB_DOMAIN,
+                'domain': get_valor('domain'),
                 'is_local': True
             } for user in local_users]
             
