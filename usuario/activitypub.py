@@ -642,3 +642,78 @@ def send_follow_activity(user, target_actor_url):
     # This is a placeholder - implement actual ActivityPub follow protocol here
     print(f"Would send Follow activity from {user} to {target_actor_url}")
     pass  # For now, just pass since we haven't implemented ActivityPub protocol yet 
+
+def fetch_remote_posts(actor_url):
+    """Fetch posts from a remote user's outbox"""
+    try:
+        # First get the actor info
+        response = requests.get(
+            actor_url,
+            headers={'Accept': 'application/activity+json'}
+        )
+        if response.status_code != 200:
+            return []
+            
+        actor = response.json()
+        outbox_url = actor.get('outbox')
+        
+        if not outbox_url:
+            return []
+            
+        # Get the outbox
+        outbox_response = requests.get(
+            outbox_url,
+            headers={'Accept': 'application/activity+json'}
+        )
+        
+        if outbox_response.status_code != 200:
+            return []
+            
+        outbox = outbox_response.json()
+        
+        # Process items/orderedItems
+        items = outbox.get('orderedItems', [])
+        if not items and 'first' in outbox:
+            # Get the first page if paginated
+            first_page_response = requests.get(
+                outbox['first'],
+                headers={'Accept': 'application/activity+json'}
+            )
+            if first_page_response.status_code == 200:
+                items = first_page_response.json().get('orderedItems', [])
+        
+        posts = []
+        for item in items:
+            if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Image':
+                obj = item['object']
+                posts.append({
+                    'remote_id': obj['id'],
+                    'actor_url': actor_url,
+                    'content': obj.get('content', ''),
+                    'image_url': obj.get('url') or obj.get('attachment', [{}])[0].get('url', ''),
+                    'published': obj.get('published')
+                })
+        
+        return posts
+                
+    except Exception as e:
+        print(f"Error fetching remote posts: {e}")
+        return []
+
+def sync_remote_posts():
+    """Sync posts from all followed remote users"""
+    from usuario.models import Follow, RemotePost
+    
+    follows = Follow.objects.filter(following__isnull=True).exclude(actor_url='')
+    for follow in follows:
+        posts = fetch_remote_posts(follow.actor_url)
+        for post_data in posts:
+            RemotePost.objects.get_or_create(
+                remote_id=post_data['remote_id'],
+                defaults={
+                    'actor_url': post_data['actor_url'],
+                    'content': post_data['content'],
+                    'image_url': post_data['image_url'],
+                    'published': post_data['published']
+                }
+            ) 

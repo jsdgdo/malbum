@@ -1,6 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+import requests
+from tempfile import NamedTemporaryFile
+from django.core.files import File
 
 class Usuario(AbstractUser):
   nombreCompleto = models.CharField(max_length=255)
@@ -104,4 +107,36 @@ class Follow(models.Model):
         if self.following:
             return f"{self.follower} follows {self.following}"
         return f"{self.follower} follows {self.remote_username}@{self.remote_domain}"
+  
+class RemotePost(models.Model):
+    """Store remote posts from followed users"""
+    remote_id = models.URLField(unique=True)
+    actor_url = models.URLField()
+    content = models.TextField()
+    image_url = models.URLField()
+    published = models.DateTimeField()
+    local_image = models.ImageField(upload_to='remote_photos/', null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-published']
+
+    def __str__(self):
+        return f"Post from {self.actor_url}"
+
+    def download_image(self):
+        """Download and store remote image locally"""
+        if self.image_url and not self.local_image:
+            try:
+                response = requests.get(self.image_url)
+                if response.status_code == 200:
+                    # Create a temporary file
+                    img_temp = NamedTemporaryFile(delete=True)
+                    img_temp.write(response.content)
+                    img_temp.flush()
+                    
+                    # Save to local storage
+                    filename = f"remote_{self.remote_id.split('/')[-1]}.jpg"
+                    self.local_image.save(filename, File(img_temp), save=True)
+            except Exception as e:
+                print(f"Error downloading image: {e}")
   

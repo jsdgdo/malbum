@@ -4,11 +4,11 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .forms import FotoForm, EtiquetaForm, ColeccionForm
 from .models import Foto, Etiqueta, Coleccion, SolicitudImagen, Configuracion
+from usuario.models import Usuario, Follow, RemotePost
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.admin.views.decorators import staff_member_required
-from usuario.models import Usuario, Follow
 from django.db import connection
 from django.db.models import Q
 import json
@@ -24,6 +24,7 @@ from django.contrib import messages
 from django.urls import reverse
 from .config import get_valor, set_valor, get_default_config, save_config, load_config
 from usuario.activitypub import notify_followers_of_new_post
+from itertools import chain
 
 def inicio(request):
   if request.user.is_authenticated:
@@ -81,26 +82,34 @@ def tablon(request):
         following__isnull=False
     ).values_list('following', flat=True)
     
-    # Get photos from followed users and the user themselves
-    fotos = Foto.objects.filter(
+    # Get actor URLs of remote users being followed
+    following_remote = Follow.objects.filter(
+        follower=request.user,
+        following__isnull=True
+    ).values_list('actor_url', flat=True)
+    
+    # Get local photos
+    local_photos = Foto.objects.filter(
         Q(usuario=request.user) |  # User's own photos
         Q(usuario__in=following_local)  # Photos from followed local users
-    ).order_by('-fecha_subida')
+    )
     
-    etiqueta = request.GET.get('etiqueta')
-    coleccion = request.GET.get('coleccion')
-
-    if etiqueta:
-        fotos = fotos.filter(etiquetas__nombre=etiqueta)
-    if coleccion:
-        fotos = fotos.filter(colecciones__titulo=coleccion)
+    # Get remote photos
+    remote_photos = RemotePost.objects.filter(
+        actor_url__in=following_remote
+    )
     
-    context = { 
-        'fotos': fotos,
+    # Combine and sort both querysets
+    all_photos = sorted(
+        chain(local_photos, remote_photos),
+        key=lambda x: x.fecha_subida if hasattr(x, 'fecha_subida') else x.published,
+        reverse=True
+    )
+    
+    context = {
+        'fotos': all_photos,
         'etiquetas': Etiqueta.objects.all(),
         'colecciones': Coleccion.objects.all(),
-        'etiqueta_seleccionada': etiqueta,
-        'coleccion_seleccionada': coleccion
     }
     return render(request, 'tablon.html', context)
 
