@@ -93,6 +93,29 @@ def tablon(request):
     )
     print(f"Found {follows.count()} remote follows: {[f.actor_url for f in follows]}")
     
+    # Fetch new posts for each followed user
+    for follow in follows:
+        print(f"\nChecking for new posts from {follow.actor_url}")
+        posts = fetch_remote_posts(follow.actor_url)
+        print(f"Found {len(posts)} posts")
+        for post_data in posts:
+            try:
+                print(f"Creating/updating post: {post_data['remote_id']}")
+                RemotePost.objects.get_or_create(
+                    remote_id=post_data['remote_id'],
+                    defaults={
+                        'actor_url': post_data['actor_url'],
+                        'content': post_data['content'],
+                        'image_url': post_data['image_url'],
+                        'published': post_data['published']
+                    }
+                )
+            except Exception as e:
+                print(f"Error saving post: {e}")
+                import traceback
+                traceback.print_exc()
+    
+    # Get all remote posts after fetching new ones
     remote_posts = RemotePost.objects.filter(
         actor_url__in=follows.values_list('actor_url', flat=True)
     ).order_by('-published')
