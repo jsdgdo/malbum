@@ -307,3 +307,80 @@ def fetch_remote_posts(actor_url):
         import traceback
         traceback.print_exc()
         return []
+
+@login_required
+def seguir_usuario(request, username, domain=None):
+    print(f"\nFollowing user: {username}@{domain}")
+    
+    if domain:
+        # Remote user
+        actor_url = f"https://{domain}/ap/{username}"
+        print(f"\nFollowing remote user at: {actor_url}")
+        
+        # Check if already following
+        existing_follow = Follow.objects.filter(
+            follower=request.user,
+            following__isnull=True,
+            actor_url=actor_url
+        ).exists()
+        
+        if existing_follow:
+            return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
+            
+        # Don't allow following yourself
+        local_domain = get_valor('domain')
+        if domain == local_domain and username == request.user.username:
+            return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
+            
+        try:
+            follow = Follow.objects.create(
+                follower=request.user,
+                actor_url=actor_url
+            )
+            print("New follow created")
+            
+            # Fetch their posts
+            print(f"\nFetching posts from {actor_url}")
+            posts = fetch_remote_posts(actor_url)
+            print(f"Found {len(posts)} posts")
+            for post_data in posts:
+                try:
+                    print(f"Creating/updating post: {post_data['remote_id']}")
+                    RemotePost.objects.get_or_create(
+                        remote_id=post_data['remote_id'],
+                        defaults={
+                            'actor_url': post_data['actor_url'],
+                            'content': post_data['content'],
+                            'image_url': post_data['image_url'],
+                            'published': post_data['published']
+                        }
+                    )
+                except Exception as e:
+                    print(f"Error saving post: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    
+            return JsonResponse({'success': True})
+            
+        except Exception as e:
+            print(f"Error following user: {e}")
+            return JsonResponse({'success': False, 'error': str(e)})
+            
+    else:
+        # Local user
+        try:
+            usuario = Usuario.objects.get(username=username)
+            
+            # Check if already following
+            if request.user.following.filter(id=usuario.id).exists():
+                return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
+                
+            # Don't allow following yourself
+            if usuario == request.user:
+                return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
+                
+            request.user.following.add(usuario)
+            return JsonResponse({'success': True})
+            
+        except Usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Usuario no encontrado'})
