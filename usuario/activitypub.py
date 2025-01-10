@@ -649,43 +649,41 @@ def fetch_remote_posts(actor_url):
     try:
         # First get the actor info
         print("Getting actor info...")
-        response = requests.get(
-            actor_url,
-            headers={
-                'Accept': 'application/activity+json',
-                'User-Agent': 'MAlbum/1.0'
-            }
-        )
+        headers = {
+            'Accept': 'application/activity+json',
+            'User-Agent': 'MAlbum/1.0 (+https://malbum.org)'
+        }
+        print(f"Using headers: {headers}")
+        
+        response = requests.get(actor_url, headers=headers, timeout=10)
         print(f"Actor response status: {response.status_code}")
+        print(f"Actor response headers: {response.headers}")
+        print(f"Actor response content: {response.text[:500]}...")  # First 500 chars
+        
         if response.status_code != 200:
             print(f"Error response: {response.text}")
             return []
             
         actor = response.json()
-        print(f"Actor data: {actor}")
         outbox_url = actor.get('outbox')
+        print(f"Found outbox URL: {outbox_url}")
         
         if not outbox_url:
-            print("No outbox URL found")
+            print("No outbox URL found in actor data")
             return []
             
         # Get the outbox
         print(f"Getting outbox from {outbox_url}")
-        outbox_response = requests.get(
-            outbox_url,
-            headers={
-                'Accept': 'application/activity+json',
-                'User-Agent': 'MAlbum/1.0'
-            }
-        )
+        outbox_response = requests.get(outbox_url, headers=headers, timeout=10)
         print(f"Outbox response status: {outbox_response.status_code}")
+        print(f"Outbox response headers: {outbox_response.headers}")
+        print(f"Outbox response content: {outbox_response.text[:500]}...")
         
         if outbox_response.status_code != 200:
             print(f"Error response: {outbox_response.text}")
             return []
             
         outbox = outbox_response.json()
-        print(f"Outbox data: {outbox}")
         
         # Process items/orderedItems
         items = outbox.get('orderedItems', [])
@@ -693,35 +691,40 @@ def fetch_remote_posts(actor_url):
             print("Getting first page of outbox")
             first_page_response = requests.get(
                 outbox['first'],
-                headers={
-                    'Accept': 'application/activity+json',
-                    'User-Agent': 'MAlbum/1.0'
-                }
+                headers=headers,
+                timeout=10
             )
+            print(f"First page response status: {first_page_response.status_code}")
             if first_page_response.status_code == 200:
                 items = first_page_response.json().get('orderedItems', [])
         
         print(f"Found {len(items)} items")
         posts = []
         for item in items:
-            print(f"\nProcessing item: {item}")
-            if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Image':
-                obj = item['object']
-                post_data = {
-                    'remote_id': obj['id'],
-                    'actor_url': actor_url,
-                    'content': obj.get('content', ''),
-                    'image_url': obj.get('url') or obj.get('attachment', [{}])[0].get('url', ''),
-                    'published': obj.get('published')
-                }
-                print(f"Found post: {post_data}")
-                posts.append(post_data)
+            print(f"\nProcessing item type: {item.get('type')}")
+            if item.get('type') == 'Create':
+                obj = item.get('object', {})
+                print(f"Object type: {obj.get('type')}")
+                if obj.get('type') in ['Image', 'Note']:  # Include Notes as well
+                    post_data = {
+                        'remote_id': obj['id'],
+                        'actor_url': actor_url,
+                        'content': obj.get('content', ''),
+                        'image_url': obj.get('url') or 
+                                   next((att.get('url', '') for att in obj.get('attachment', []) 
+                                        if att.get('type') in ['Image', 'Document']), ''),
+                        'published': obj.get('published')
+                    }
+                    print(f"Found post: {post_data}")
+                    posts.append(post_data)
         
         print(f"Returning {len(posts)} posts")
         return posts
                 
     except Exception as e:
         print(f"Error fetching remote posts: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def sync_remote_posts():

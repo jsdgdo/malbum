@@ -5,12 +5,12 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from .models import Usuario, Follow
+from .models import Usuario, Follow, RemotePost
 from malbum.models import Foto
 from malbum.config import get_default_config, save_config, get_valor
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from .activitypub import search_users_remote, send_follow_activity
+from .activitypub import search_users_remote, fetch_remote_posts
 import json
 from django.conf import settings
 from django.db.models import Q
