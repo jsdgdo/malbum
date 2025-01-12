@@ -173,7 +173,11 @@ def buscar_usuarios(request):
                 'username': username,
                 'name': username,
                 'domain': domain,
-                'is_local': False
+                'is_local': False,
+                'is_followed': Follow.objects.filter(
+                    follower=request.user,
+                    actor_url=f"https://{domain}/ap/{username}"
+                ).exists() if request.user.is_authenticated else False
             }]
         else:
             # Local user search
@@ -187,27 +191,16 @@ def buscar_usuarios(request):
                 'username': user.username,
                 'name': user.get_full_name(),
                 'domain': get_valor('domain'),
-                'is_local': True
+                'is_local': True,
+                'is_followed': Follow.objects.filter(
+                    follower=request.user,
+                    following=user
+                ).exists() if request.user.is_authenticated else False
             } for user in local_users]
-            
-        # Add follow status for each user if the requester is authenticated
-        if request.user.is_authenticated:
-            for user in results:
-                if user.get('is_local'):
-                    user['is_followed'] = Follow.objects.filter(
-                        follower=request.user,
-                        following__username=user['username']
-                    ).exists()
-                else:
-                    user['is_followed'] = Follow.objects.filter(
-                        follower=request.user,
-                        actor_url=f"https://{user['domain']}/ap/{user['username']}"
-                    ).exists()
-        
+    
     return render(request, 'usuario/resultados_busqueda.html', {
         'query': query,
-        'users': results,
-        'local_domain': get_valor('domain')
+        'users': results
     })
 
 def fetch_remote_posts(actor_url):
