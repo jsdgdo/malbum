@@ -154,57 +154,93 @@ def search_users_remote(query):
 @login_required
 def buscar_usuarios(request):
     query = request.GET.get('q', '')
-    results = []
+    print(f"Direct search for {query}")
     
-    if query:
-        if '@' in query:
-            # Direct search for remote user
-            print(f"Direct search for {query}")
-            username, domain = query.split('@')
-            
-            # Don't allow following yourself
-            local_domain = get_valor('domain')
-            if domain == local_domain and username == request.user.username:
-                return render(request, 'usuario/resultados_busqueda.html', {
-                    'query': query,
-                    'error': 'No puedes seguirte a ti mismo'
-                })
+    if '@' in query:
+        # Direct remote user search
+        username, domain = query.split('@')
+        results = [{
+            'username': username,
+            'name': username,  # We'll try to fetch the real name
+            'domain': domain,
+            'is_local': False,
+            'avatar_url': f"https://{domain}/ap/{username}/avatar",  # Default avatar URL
+            'recent_posts': []  # We'll populate this
+        }]
+        
+        # Try to fetch user info and recent posts
+        actor_url = f"https://{domain}/ap/{username}"
+        try:
+            headers = {
+                'Accept': 'application/activity+json',
+                'User-Agent': 'MAlbum/1.0'
+            }
+            response = requests.get(actor_url, headers=headers)
+            if response.status_code == 200:
+                actor_data = response.json()
+                results[0]['name'] = actor_data.get('name', username)
+                if 'icon' in actor_data:
+                    results[0]['avatar_url'] = actor_data['icon'].get('url', results[0]['avatar_url'])
                 
-            # For remote users, just create a single result
-            results = [{
-                'username': username,
-                'name': username,
-                'domain': domain,
-                'is_local': False
-            }]
+                # Fetch recent posts
+                outbox_url = actor_data.get('outbox')
+                if outbox_url:
+                    posts_response = requests.get(outbox_url, headers=headers)
+                    if posts_response.status_code == 200:
+                        posts_data = posts_response.json()
+                        items = posts_data.get('orderedItems', [])[:3]  # Get last 3 posts
+                        for item in items:
+                            if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Note':
+                                obj = item['object']
+                                attachments = obj.get('attachment', [])
+                                image_urls = [
+                                    att['url'] for att in attachments 
+                                    if att.get('mediaType', '').startswith('image/')
+                                ]
+                                if image_urls:
+                                    results[0]['recent_posts'].append({
+                                        'content': obj.get('content', ''),
+                                        'image_url': image_urls[0],
+                                        'published': obj.get('published')
+                                    })
+        except Exception as e:
+            print(f"Error fetching remote user info: {e}")
+            
+    else:
+        # Local user search
+        results = Usuario.objects.filter(
+            Q(username__icontains=query) |
+            Q(nombreCompleto__icontains=query)
+        ).annotate(
+            is_followed=Exists(
+                Follow.objects.filter(
+                    follower=request.user,
+                    following=OuterRef('pk')
+                )
+            )
+        ).values('username', 'nombreCompleto', 'avatar')
+        
+        results = [{
+            'username': user['username'],
+            'name': user['nombreCompleto'],
+            'domain': get_valor('domain'),
+            'is_local': True,
+            'avatar_url': user['avatar'].url if user['avatar'] else None,
+            'recent_posts': Foto.objects.filter(usuario__username=user['username']).order_by('-fecha_subida')[:3]
+        } for user in results]
+
+    # Add follow status
+    for user in results:
+        if user['is_local']:
+            user['is_followed'] = Follow.objects.filter(
+                follower=request.user,
+                following__username=user['username']
+            ).exists()
         else:
-            # Local user search
-            local_users = Usuario.objects.filter(
-                Q(username__icontains=query) |
-                Q(first_name__icontains=query) |
-                Q(last_name__icontains=query)
-            ).exclude(id=request.user.id)  # Exclude yourself
-            
-            results = [{
-                'username': user.username,
-                'name': user.get_full_name(),
-                'domain': get_valor('domain'),
-                'is_local': True
-            } for user in local_users]
-            
-        # Add follow status for each user if the requester is authenticated
-        if request.user.is_authenticated:
-            for user in results:
-                if user.get('is_local'):
-                    user['is_followed'] = Follow.objects.filter(
-                        follower=request.user,
-                        following__username=user['username']
-                    ).exists()
-                else:
-                    user['is_followed'] = Follow.objects.filter(
-                        follower=request.user,
-                        actor_url=f"https://{user['domain']}/ap/{user['username']}"
-                    ).exists()
+            user['is_followed'] = Follow.objects.filter(
+                follower=request.user,
+                actor_url=f"https://{user['domain']}/ap/{user['username']}"
+            ).exists()
 
     return render(request, 'usuario/resultados_busqueda.html', {
         'query': query,

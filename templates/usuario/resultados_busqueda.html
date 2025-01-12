@@ -1,119 +1,61 @@
 {% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Resultados de búsqueda{% endblock %}
 
 {% block content %}
-{% csrf_token %}
 <div class="container mt-5">
-    <h2>Resultados de búsqueda para "{{ query }}"</h2>
+    <h2 class="text-center mb-4">Resultados de búsqueda para "{{ query }}"</h2>
     
-    {% if users %}
-        <div class="row">
-            {% for user in users %}
-                <div class="col-md-4 mb-4">
-                    <div class="card search-result-card">
-                        <div class="card-body d-flex align-items-center">
-                            <div class="me-3">
-                                {% if user.avatar_url %}
-                                    <img src="{{ user.avatar_url }}" 
-                                         class="rounded-circle" 
-                                         alt="Avatar de {{ user.nombreCompleto }}"
-                                         style="width: 64px; height: 64px; object-fit: cover;">
-                                {% else %}
-                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
-                                         style="width: 64px; height: 64px; color: white;">
-                                        {{ user.username|make_list|first|upper }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="flex-grow-1">
-                                <h5 class="card-title mb-1">{{ user.nombreCompleto }}</h5>
-                                <p class="text-muted mb-2">
-                                    @{{ user.username }}
-                                    {% if user.is_remote %}
-                                        <span class="badge bg-secondary">{{ user.domain }}</span>
-                                    {% endif %}
-                                </p>
-                                {% if user.bio %}
-                                    <p class="card-text small">{{ user.bio|safe|truncatechars:100 }}</p>
-                                {% endif %}
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <a href="{{ user.actor_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                        Ver perfil
-                                    </a>
-                                    {% if user.is_followed %}
-                                        <button class="btn btn-sm btn-danger" 
-                                                onclick="unfollowUser('{{ user.username }}', '{{ user.domain }}')">
-                                            Dejar de seguir
-                                        </button>
-                                    {% else %}
-                                        <button class="btn btn-sm btn-primary" 
-                                                onclick="followUser('{{ user.username }}', '{{ user.domain }}', '{{ user.actor_url }}')">
-                                            Seguir
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            </div>
+    {% for user in users %}
+    <div class="card mb-4">
+        <div class="card-header d-flex align-items-center">
+            {% if user.avatar_url %}
+            <img src="{{ user.avatar_url }}" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;" alt="Avatar">
+            {% endif %}
+            <div>
+                <h3 class="mb-0">{{ user.name }}</h3>
+                <p class="text-muted mb-0">@{{ user.username }}{% if not user.is_local %}@{{ user.domain }}{% endif %}</p>
+            </div>
+            <div class="ms-auto">
+                {% if user.username != request.user.username %}
+                    {% if user.is_followed %}
+                        <button class="btn btn-outline-danger unfollow-btn" 
+                                data-username="{{ user.username }}" 
+                                data-domain="{{ user.domain }}">
+                            Dejar de seguir
+                        </button>
+                    {% else %}
+                        <button class="btn btn-primary follow-btn" 
+                                data-username="{{ user.username }}" 
+                                data-domain="{{ user.domain }}">
+                            Seguir
+                        </button>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if user.recent_posts %}
+        <div class="card-body">
+            <h4 class="mb-3">Publicaciones recientes</h4>
+            <div class="row">
+                {% for post in user.recent_posts %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <img src="{{ post.image_url|default:post.imagen.url }}" class="card-img-top" alt="Post image">
+                        <div class="card-body">
+                            <p class="card-text">{{ post.content|default:post.descripcion|truncatechars:100 }}</p>
+                            <p class="text-muted">{{ post.published|default:post.fecha_subida|date:"d/m/Y H:i" }}</p>
                         </div>
                     </div>
                 </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
-    {% else %}
-        <p class="text-muted">No se encontraron usuarios que coincidan con tu búsqueda.</p>
-    {% endif %}
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="alert alert-info">
+        No se encontraron usuarios que coincidan con "{{ query }}"
+    </div>
+    {% endfor %}
 </div>
-
-<script>
-function followUser(username, domain, actorUrl) {
-    fetch(`/usuario/${username}@${domain}/follow/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            'actor_url': actorUrl,
-            'remote_username': username,
-            'remote_domain': domain
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();  // Reload to update buttons
-        } else {
-            alert(data.error || 'Error al seguir al usuario');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al procesar la solicitud');
-    });
-}
-
-function unfollowUser(username, domain) {
-    if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
-        fetch(`/usuario/${username}@${domain}/unfollow/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();  // Reload to update buttons
-            } else {
-                alert(data.error || 'Error al dejar de seguir al usuario');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al procesar la solicitud');
-        });
-    }
-}
-</script>
 {% endblock %} 
