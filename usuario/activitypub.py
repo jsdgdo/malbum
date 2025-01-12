@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from urllib.parse import urlparse
 import time
 from django.conf import settings
+from django.views.decorators.http import require_GET
 
 def load_private_key():
     try:
@@ -744,3 +745,17 @@ def sync_remote_posts():
                     'published': post_data['published']
                 }
             ) 
+
+@require_GET
+def avatar(request, username):
+    """Serve user's avatar through ActivityPub endpoint"""
+    user = get_object_or_404(Usuario, username=username)
+    
+    if user.avatar:
+        # If user has an avatar, serve it
+        response = HttpResponse(user.avatar, content_type='image/jpeg')
+        response['Content-Disposition'] = f'inline; filename="{username}_avatar.jpg"'
+        return response
+    else:
+        # If no avatar, serve a default image or 404
+        return HttpResponse(status=404) 
