@@ -116,26 +116,31 @@ def follow_user(request, username):
                 
     return JsonResponse({'success': True})
 
-@login_required
 @require_POST
-def unfollow_user(request, username):
-    if '@' in username:
-        # Handle remote user
-        username, domain = username.split('@', 1)
-        Follow.objects.filter(
-            follower=request.user,
-            remote_username=username,
-            remote_domain=domain
-        ).delete()
-    else:
-        # Handle local user
-        user_to_unfollow = get_object_or_404(Usuario, username=username)
-        Follow.objects.filter(
-            follower=request.user,
-            following=user_to_unfollow
-        ).delete()
+@login_required
+def unfollow(request):
+    username = request.POST.get('username')
+    domain = request.POST.get('domain')
     
-    return JsonResponse({'success': True})
+    print(f"\nUnfollowing remote user: {username}@{domain}")
+    
+    try:
+        # Remote unfollow
+        actor_url = f"https://{domain}/ap/{username}"
+        Follow.objects.filter(
+            follower=request.user,
+            actor_url=actor_url
+        ).delete()
+        
+        # Also delete their remote posts
+        RemotePost.objects.filter(actor_url=actor_url).delete()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        print(f"Error unfollowing: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def search_users_remote(query):
     """Search for remote users"""

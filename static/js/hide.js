@@ -89,3 +89,28 @@ function followUser(username, isLocal) {
         alert('Error al procesar la solicitud');
     });
 }
+
+function unfollow(username, domain) {
+    if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
+        fetch('/usuario/unfollow/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `username=${username}&domain=${domain}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al dejar de seguir: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al dejar de seguir');
+        });
+    }
+}
