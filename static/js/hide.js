@@ -50,50 +50,42 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-function follow(username, domain) {
-    fetch('/usuario/seguir/', {
+function followUser(username, isLocal) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const followBtn = document.querySelector(`[data-username="${username}"]`);
+    
+    if (!followBtn) {
+        console.error('Follow button not found');
+        return;
+    }
+    
+    fetch(`/usuario/follow/${username}/`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
         },
-        body: `username=${username}&domain=${domain}`
+        body: JSON.stringify({})
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            location.reload();
+            // Update button text and state
+            if (followBtn.textContent.trim() === 'Seguir') {
+                followBtn.textContent = 'Dejar de seguir';
+                followBtn.classList.remove('btn-primary');
+                followBtn.classList.add('btn-secondary');
+            } else {
+                followBtn.textContent = 'Seguir';
+                followBtn.classList.remove('btn-secondary');
+                followBtn.classList.add('btn-primary');
+            }
         } else {
-            alert('Error al seguir: ' + data.error);
+            alert(data.error || 'Error al seguir/dejar de seguir al usuario');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al seguir');
+        alert('Error al procesar la solicitud');
     });
-}
-
-function unfollow(username, domain) {
-    if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
-        fetch('/usuario/dejar-de-seguir/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `username=${username}&domain=${domain}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error al dejar de seguir: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al dejar de seguir');
-        });
-    }
 }

@@ -60,13 +60,13 @@ def perfil_usuario(request, username):
 
 @login_required
 @require_POST
-def follow(request):
-    username = request.POST.get('username')
-    domain = request.POST.get('domain')
+def follow_user(request, username):
+    print(f"\nFollowing user: {username}")
     
-    print(f"\nFollowing remote user: {username}@{domain}")
-    
-    try:
+    # Parse username and domain
+    if '@' in username:
+        username, domain = username.split('@')
+        
         # Don't allow following yourself
         local_domain = get_valor('domain')
         if domain == local_domain and username == request.user.username:
@@ -82,7 +82,10 @@ def follow(request):
         ).first()
         
         if follow:
-            return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
+            # Unfollow
+            follow.delete()
+            print("Unfollowed user")
+            return JsonResponse({'success': True})
         
         # Create new follow
         follow = Follow.objects.create(
@@ -111,38 +114,28 @@ def follow(request):
                 import traceback
                 traceback.print_exc()
                 
-        return JsonResponse({'success': True})
-    except Exception as e:
-        print(f"Error following: {e}")
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': True})
 
-@require_POST
 @login_required
-def unfollow(request):
-    username = request.POST.get('username')
-    domain = request.POST.get('domain')
-    
-    print(f"\nUnfollowing remote user: {username}@{domain}")
-    
-    try:
-        # Remote unfollow
-        actor_url = f"https://{domain}/ap/{username}"
+@require_POST
+def unfollow_user(request, username):
+    if '@' in username:
+        # Handle remote user
+        username, domain = username.split('@', 1)
         Follow.objects.filter(
             follower=request.user,
-            actor_url=actor_url
+            remote_username=username,
+            remote_domain=domain
         ).delete()
-        
-        # Also delete their remote posts
-        RemotePost.objects.filter(actor_url=actor_url).delete()
-        
-        return JsonResponse({'success': True})
-    except Exception as e:
-        print(f"Error unfollowing: {e}")
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(e)})
+    else:
+        # Handle local user
+        user_to_unfollow = get_object_or_404(Usuario, username=username)
+        Follow.objects.filter(
+            follower=request.user,
+            following=user_to_unfollow
+        ).delete()
+    
+    return JsonResponse({'success': True})
 
 def search_users_remote(query):
     """Search for remote users"""
