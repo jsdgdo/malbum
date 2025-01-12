@@ -53,7 +53,6 @@ urlpatterns = [
     path("ap/<str:username>/outbox", activitypub.outbox, name="activitypub_outbox"),
     path("ap/<str:username>/followers", activitypub.followers, name="activitypub_followers"),
     path("ap/<str:username>/following", activitypub.following, name="activitypub_following"),
-    path("ap/<str:username>/avatar/", activitypub.avatar, name="activitypub_avatar"),
     path('.well-known/webfinger', activitypub.webfinger, name='webfinger'),
 ]
 

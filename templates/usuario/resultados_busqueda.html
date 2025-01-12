@@ -1,61 +1,39 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-4">Resultados de búsqueda para "{{ query }}"</h2>
-    
-    {% for user in users %}
-    <div class="card mb-4">
-        <div class="card-header d-flex align-items-center">
-            {% if user.avatar_url %}
-            <img src="{{ user.avatar_url }}" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;" alt="Avatar">
-            {% endif %}
-            <div>
-                <h3 class="mb-0">{{ user.name }}</h3>
-                <p class="text-muted mb-0">@{{ user.username }}{% if not user.is_local %}@{{ user.domain }}{% endif %}</p>
-            </div>
-            <div class="ms-auto">
-                {% if user.username != request.user.username %}
-                    {% if user.is_followed %}
-                        <button class="btn btn-outline-danger unfollow-btn" 
-                                data-username="{{ user.username }}" 
-                                data-domain="{{ user.domain }}">
-                            Dejar de seguir
-                        </button>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        {% for user in users %}
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body d-flex align-items-center">
+                    {% if user.avatar_url %}
+                    <img src="{{ user.avatar_url }}" alt="Avatar" class="rounded-circle mr-3" style="width: 60px; height: 60px;">
                     {% else %}
-                        <button class="btn btn-primary follow-btn" 
-                                data-username="{{ user.username }}" 
-                                data-domain="{{ user.domain }}">
-                            Seguir
-                        </button>
+                    <div class="avatar-placeholder rounded-circle mr-3" style="width: 60px; height: 60px; background-color: #ccc; display: flex; align-items: center; justify-content: center;">
+                        <span>{{ user.username|slice:":1"|upper }}</span>
+                    </div>
                     {% endif %}
-                {% endif %}
-            </div>
-        </div>
-        
-        {% if user.recent_posts %}
-        <div class="card-body">
-            <h4 class="mb-3">Publicaciones recientes</h4>
-            <div class="row">
-                {% for post in user.recent_posts %}
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="{{ post.image_url }}" class="card-img-top" alt="Post image">
-                        <div class="card-body">
-                            <p class="card-text">{{ post.content|truncatechars:100 }}</p>
-                            <p class="text-muted">{{ post.published|date:"d/m/Y H:i" }}</p>
-                        </div>
+                    <div>
+                        <h5 class="card-title">{{ user.name }}</h5>
+                        <p class="card-text">{{ user.domain }}</p>
+                        <button class="btn btn-primary follow-btn" data-username="{{ user.username }}" data-domain="{{ user.domain }}">Follow</button>
                     </div>
                 </div>
-                {% endfor %}
+                <div class="card-footer">
+                    <h6>Recent Posts</h6>
+                    <ul class="list-unstyled">
+                        {% for post in user.recent_posts %}
+                        <li>
+                            <img src="{{ post.image_url }}" alt="Post Image" style="width: 50px; height: 50px;">
+                            <span>{{ post.content|truncatewords:10 }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
-        {% endif %}
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="alert alert-info">
-        No se encontraron usuarios que coincidan con "{{ query }}"
-    </div>
-    {% endfor %}
 </div>
 {% endblock %} 

@@ -13,7 +13,7 @@ from django.db import models
 from .activitypub import search_users_remote, fetch_remote_posts
 import json
 from django.conf import settings
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q
 import requests
 
 
@@ -143,87 +143,78 @@ def search_users_remote(query):
     """Search for remote users"""
     if '@' in query:
         username, domain = query.split('@')
-        return [{
+        actor_url = f"https://{domain}/ap/{username}"
+        
+        # Fetch user details
+        user_data = {
             'username': username,
-            'name': username,
+            'name': username,  # Replace with actual name if available
             'domain': domain,
+            'avatar_url': f"https://{domain}/ap/{username}/avatar",  # Ensure this URL returns an image
             'is_local': False
-        }]
+        }
+        
+        # Fetch recent posts
+        recent_posts = fetch_remote_posts(actor_url)[:3]
+        user_data['recent_posts'] = recent_posts
+        
+        return [user_data]
     return []
 
 @login_required
 def buscar_usuarios(request):
     query = request.GET.get('q', '')
-    print(f"Direct search for {query}")
+    results = []
     
-    if '@' in query:
-        # Direct remote user search
-        username, domain = query.split('@')
-        results = [{
-            'username': username,
-            'name': username,  # We'll try to fetch the real name
-            'domain': domain,
-            'is_local': False,
-            'avatar_url': None,  # We'll try to fetch this
-            'recent_posts': []  # We'll populate this
-        }]
-        
-        # Try to fetch user info and recent posts
-        actor_url = f"https://{domain}/ap/{username}"
-        try:
-            headers = {
-                'Accept': 'application/activity+json',
-                'User-Agent': 'MAlbum/1.0'
-            }
-            response = requests.get(actor_url, headers=headers)
-            if response.status_code == 200:
-                actor_data = response.json()
-                results[0]['name'] = actor_data.get('name', username)
-                if 'icon' in actor_data:
-                    results[0]['avatar_url'] = actor_data['icon'].get('url')
-                
-                # Fetch recent posts
-                posts = fetch_remote_posts(actor_url)
-                results[0]['recent_posts'] = posts[:3]  # Only take first 3 posts
-                
-        except Exception as e:
-            print(f"Error fetching remote user info: {e}")
+    if query:
+        if '@' in query:
+            # Direct search for remote user
+            print(f"Direct search for {query}")
+            username, domain = query.split('@')
             
-    else:
-        # Local user search
-        results = Usuario.objects.filter(
-            Q(username__icontains=query) |
-            Q(nombreCompleto__icontains=query)
-        ).annotate(
-            is_followed=Exists(
-                Follow.objects.filter(
-                    follower=request.user,
-                    following=OuterRef('pk')
-                )
-            )
-        ).values('username', 'nombreCompleto', 'avatar')
-        
-        results = [{
-            'username': user['username'],
-            'name': user['nombreCompleto'],
-            'domain': get_valor('domain'),
-            'is_local': True,
-            'avatar_url': user['avatar'].url if user['avatar'] else None,
-            'recent_posts': Foto.objects.filter(usuario__username=user['username']).order_by('-fecha_subida')[:3]
-        } for user in results]
-
-    # Add follow status
-    for user in results:
-        if user['is_local']:
-            user['is_followed'] = Follow.objects.filter(
-                follower=request.user,
-                following__username=user['username']
-            ).exists()
+            # Don't allow following yourself
+            local_domain = get_valor('domain')
+            if domain == local_domain and username == request.user.username:
+                return render(request, 'usuario/resultados_busqueda.html', {
+                    'query': query,
+                    'error': 'No puedes seguirte a ti mismo'
+                })
+                
+            # For remote users, just create a single result
+            results = [{
+                'username': username,
+                'name': username,
+                'domain': domain,
+                'is_local': False
+            }]
         else:
-            user['is_followed'] = Follow.objects.filter(
-                follower=request.user,
-                actor_url=f"https://{user['domain']}/ap/{user['username']}"
-            ).exists()
+            # Local user search
+            local_users = Usuario.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query)
+            ).exclude(id=request.user.id)  # Exclude yourself
+            
+            results = [{
+                'username': user.username,
+                'name': user.get_full_name(),
+                'domain': get_valor('domain'),
+                'is_local': True
+            } for user in local_users]
+            
+        # Add follow status for each user if the requester is authenticated
+        if request.user.is_authenticated:
+            for user in results:
+                if user.get('is_local'):
+                    user['is_followed'] = Follow.objects.filter(
+                        follower=request.user,
+                        following__username=user['username']
+                    ).exists()
+                else:
+                    user['is_followed'] = Follow.objects.filter(
+                        follower=request.user,
+                        actor_url=f"https://{user['domain']}/ap/{user['username']}"
+                    ).exists()
 
     return render(request, 'usuario/resultados_busqueda.html', {
         'query': query,

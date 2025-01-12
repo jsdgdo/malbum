@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from .models import Usuario, Follow, get_default_user
@@ -16,7 +16,6 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from urllib.parse import urlparse
 import time
 from django.conf import settings
-from django.views.decorators.http import require_GET
 
 def load_private_key():
     try:
@@ -707,18 +706,13 @@ def fetch_remote_posts(actor_url):
                 obj = item.get('object', {})
                 print(f"Object type: {obj.get('type')}")
                 if obj.get('type') in ['Image', 'Note']:  # Include Notes as well
-                    # Use a smaller image URL if available
-                    image_url = obj.get('url') or next(
-                        (att.get('url', '') for att in obj.get('attachment', [])
-                         if att.get('type') in ['Image', 'Document']), ''
-                    )
-                    # Assume a function get_thumbnail_url exists to get a smaller image
-                    thumbnail_url = get_thumbnail_url(image_url)
                     post_data = {
                         'remote_id': obj['id'],
                         'actor_url': actor_url,
                         'content': obj.get('content', ''),
-                        'image_url': thumbnail_url,
+                        'image_url': obj.get('url') or 
+                                   next((att.get('url', '') for att in obj.get('attachment', []) 
+                                        if att.get('type') in ['Image', 'Document']), ''),
                         'published': obj.get('published')
                     }
                     print(f"Found post: {post_data}")
@@ -751,16 +745,12 @@ def sync_remote_posts():
                 }
             ) 
 
-@require_GET
-def avatar(request, username):
-    """Serve user's avatar through ActivityPub endpoint"""
-    user = get_object_or_404(Usuario, username=username)
-    
-    if user.avatar:
-        # If user has an avatar, serve it
-        response = HttpResponse(user.avatar, content_type='image/jpeg')
-        response['Content-Disposition'] = f'inline; filename="{username}_avatar.jpg"'
-        return response
-    else:
-        # If no avatar, serve a default image or 404
-        return HttpResponse(status=404) 
+def user_avatar(request, username):
+    try:
+        user = Usuario.objects.get(username=username)
+        if user.avatar:
+            return HttpResponse(user.avatar, content_type='image/jpeg')
+        else:
+            raise Http404("Avatar not found")
+    except Usuario.DoesNotExist:
+        raise Http404("User not found") 
