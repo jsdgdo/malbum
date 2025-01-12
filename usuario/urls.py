@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('registrarse/', views.registrarUsuario, name='registrarUsuario'),
-    path('iniciar-sesion/', auth_views.LoginView.as_view(template_name='usuario/login.html'), name='iniciarSesion'),
+    path('iniciar-sesion/', auth_views.LoginView.as_view(template_name='usuario/iniciar-sesion.html'), name='iniciarSesion'),
     path('cerrar-sesion/', auth_views.LogoutView.as_view(next_page='inicio'), name='cerrarSesion'),
     path('recuperar-contrasena/', auth_views.PasswordResetView.as_view(template_name='usuario/recuperar-contrasena.html'), name='password_reset'),
     path('recuperar-contrasena/enviado/', auth_views.PasswordResetDoneView.as_view(template_name='usuario/recuperar-contrasena-enviado.html'), name='password_reset_done'),
