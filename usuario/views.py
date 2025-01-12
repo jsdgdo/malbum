@@ -160,6 +160,14 @@ def buscar_usuarios(request):
             print(f"Direct search for {query}")
             username, domain = query.split('@')
             
+            # Don't allow following yourself
+            local_domain = get_valor('domain')
+            if domain == local_domain and username == request.user.username:
+                return render(request, 'usuario/resultados_busqueda.html', {
+                    'query': query,
+                    'error': 'No puedes seguirte a ti mismo'
+                })
+            
             # For remote users, just create a single result
             results = [{
                 'username': username,
@@ -374,39 +382,3 @@ def seguir_usuario(request, username, domain=None):
             
         except Usuario.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Usuario no encontrado'})
-
-def search_users(request):
-    query = request.GET.get('q', '')
-    results = []
-    
-    if '@' in query:
-        username, domain = query.rsplit('@', 1)
-        # Remote user search
-        results = [{
-            'username': username,
-            'domain': domain,
-            'is_following': Follow.objects.filter(
-                follower=request.user,
-                actor_url=f"https://{domain}/ap/{username}"
-            ).exists() if request.user.is_authenticated else False
-        }]
-    else:
-        # Local user search
-        local_users = Usuario.objects.filter(
-            Q(username__icontains=query) |
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query)
-        )
-        results = [{
-            'username': user.username,
-            'domain': get_valor('domain'),
-            'is_following': Follow.objects.filter(
-                follower=request.user,
-                following=user
-            ).exists() if request.user.is_authenticated else False
-        } for user in local_users]
-    
-    return render(request, 'usuario/resultados_busqueda.html', {
-        'results': results,
-        'local_domain': get_valor('domain')
-    })
