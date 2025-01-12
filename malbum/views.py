@@ -131,44 +131,69 @@ def tablon(request):
     print("\nLoading tablon...")
     
     # Get local photos
-    fotos_locales = Foto.objects.filter(
-        Q(usuario=request.user) | 
-        Q(usuario__in=request.user.following.all())
-    ).order_by('-fecha_subida')
+    fotos_locales = Foto.objects.all().order_by('-fecha_subida')
     print(f"Found {fotos_locales.count()} local photos")
     
-    # Get remote posts from users we follow
-    follows = Follow.objects.filter(
-        follower=request.user,
-        following__isnull=True,
-        actor_url__isnull=False
-    )
+    # Get followed users
+    follows = Follow.objects.filter(follower=request.user)
     print(f"Found {follows.count()} remote follows: {[f.actor_url for f in follows]}")
     
-    # Fetch new posts for each followed user
+    # Clean up and update remote posts
     for follow in follows:
-        print(f"\nChecking for new posts from {follow.actor_url}")
-        posts = fetch_remote_posts(follow.actor_url)
-        print(posts)
-        print(f"Found {len(posts)} posts")
-        for post_data in posts:
-            try:
-                print(f"Creating/updating post: {post_data['remote_id']}")
-                RemotePost.objects.get_or_create(
-                    remote_id=post_data['remote_id'],
-                    defaults={
-                        'actor_url': post_data['actor_url'],
-                        'content': post_data['content'],
-                        'image_url': post_data['image_url'],
-                        'published': post_data['published']
-                    }
-                )
-            except Exception as e:
-                print(f"Error saving post: {e}")
-                import traceback
-                traceback.print_exc()
+        print(f"\nChecking posts from {follow.actor_url}")
+        try:
+            # Try to fetch actor info first
+            headers = {
+                'Accept': 'application/activity+json'
+            }
+            response = requests.get(follow.actor_url, headers=headers, timeout=10)
+            
+            if response.status_code != 200:
+                print(f"User no longer exists at {follow.actor_url}, cleaning up...")
+                # User no longer exists, remove their posts and follow
+                RemotePost.objects.filter(actor_url=follow.actor_url).delete()
+                follow.delete()
+                continue
+                
+            # User exists, fetch their posts
+            posts = fetch_remote_posts(follow.actor_url)
+            
+            # Get existing post IDs for this user
+            existing_posts = set(RemotePost.objects.filter(
+                actor_url=follow.actor_url
+            ).values_list('remote_id', flat=True))
+            
+            # Add new posts
+            for post_data in posts:
+                try:
+                    # Verify post still exists
+                    post_response = requests.head(post_data['image_url'], timeout=10)
+                    if post_response.status_code == 200:
+                        RemotePost.objects.get_or_create(
+                            remote_id=post_data['remote_id'],
+                            defaults={
+                                'actor_url': post_data['actor_url'],
+                                'content': post_data['content'],
+                                'image_url': post_data['image_url'],
+                                'published': post_data['published']
+                            }
+                        )
+                except Exception as e:
+                    print(f"Error checking post {post_data['remote_id']}: {e}")
+                    continue
+            
+            # Remove posts that no longer exist
+            posts_to_keep = set(p['remote_id'] for p in posts)
+            deleted_posts = existing_posts - posts_to_keep
+            if deleted_posts:
+                print(f"Removing {len(deleted_posts)} deleted posts")
+                RemotePost.objects.filter(remote_id__in=deleted_posts).delete()
+                
+        except Exception as e:
+            print(f"Error processing follow {follow.actor_url}: {e}")
+            continue
     
-    # Get all remote posts after fetching new ones
+    # Get remaining valid remote posts
     remote_posts = RemotePost.objects.filter(
         actor_url__in=follows.values_list('actor_url', flat=True)
     ).order_by('-published')

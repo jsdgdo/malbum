@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
-from .forms import RegistroUsuarioForm
+from .forms import RegistroUsuarioForm, EditarUsuarioForm
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -15,6 +15,7 @@ import json
 from django.conf import settings
 from django.db.models import Q
 import requests
+from django.contrib import messages
 
 
 def registrarUsuario(request):
@@ -351,19 +352,17 @@ def fetch_remote_posts(actor_url):
 @login_required
 def editar_usuario(request):
     if request.method == "POST":
-        form = RegistroUsuarioForm(request.POST, request.FILES, instance=request.user)
+        form = EditarUsuarioForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            usuario = form.save(commit=False)
-            if not form.cleaned_data['password1']:  # If no new password provided
-                usuario.password = request.user.password  # Keep existing password
-            usuario.save()
+            usuario = form.save()
+            messages.success(request, 'Perfil actualizado correctamente')
             return redirect("panel_control")
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario')
     else:
-        form = RegistroUsuarioForm(instance=request.user)
-        form.fields['password1'].required = False
-        form.fields['password2'].required = False
-    
+        form = EditarUsuarioForm(instance=request.user)
+
     return render(request, "usuario/registrar.html", {
         "form": form,
-        "is_edit": True  # To differentiate between register and edit
+        "is_edit": True
     })

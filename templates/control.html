@@ -66,8 +66,21 @@
         </div>
       </div>
     </div>
-
     <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h3>Editar usuario publicador</h3>
+          <p>Para modificar los datos del usuario publicador</p>
+          <a href="{% url 'editar_usuario' %}" class="btn btn-primary">
+            Editar usuario
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+      
+  <div class="row mt-4">
+    <div class="col-md-12">
       <div class="card border-danger">
         <div class="card-body">
           <h3 class="text-danger">Zona de Peligro</h3>
@@ -83,10 +96,5 @@
     </div>
   </div>
 
-  <div class="list-group">
-    <a href="{% url 'editar_usuario' %}" class="list-group-item list-group-item-action">
-        Editar perfil
-    </a>
-  </div>
 </div>
 {% endblock %}
