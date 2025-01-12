@@ -381,11 +381,32 @@ def search_users(request):
     
     if '@' in query:
         username, domain = query.rsplit('@', 1)
-        # Remote user search...
+        # Remote user search
+        results = [{
+            'username': username,
+            'domain': domain,
+            'is_following': Follow.objects.filter(
+                follower=request.user,
+                actor_url=f"https://{domain}/ap/{username}"
+            ).exists() if request.user.is_authenticated else False
+        }]
     else:
-        # Local user search...
-        
-    return render(request, 'search_results.html', {
+        # Local user search
+        local_users = Usuario.objects.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )
+        results = [{
+            'username': user.username,
+            'domain': get_valor('domain'),
+            'is_following': Follow.objects.filter(
+                follower=request.user,
+                following=user
+            ).exists() if request.user.is_authenticated else False
+        } for user in local_users]
+    
+    return render(request, 'usuario/resultados_busqueda.html', {
         'results': results,
         'local_domain': get_valor('domain')
     })
