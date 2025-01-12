@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-1)#c16_7jxnzm^(ome1i8hu-fd)p-y0vr4!^)m$hf0g0!6z9uj'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['malbum.org', 'localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -59,7 +59,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-          os.path.join(BASE_DIR, 'templates')
+            os.path.join(BASE_DIR, 'templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
