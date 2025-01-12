@@ -118,23 +118,23 @@ def follow_user(request, username):
 
 @login_required
 @require_POST
-def unfollow_user(request, username, domain=None):
-    if domain:
-        # Remote user
-        actor_url = f"https://{domain}/ap/{username}"
+def unfollow_user(request, username):
+    if '@' in username:
+        # Handle remote user
+        username, domain = username.split('@', 1)
         Follow.objects.filter(
             follower=request.user,
-            following__isnull=True,
-            actor_url=actor_url
+            remote_username=username,
+            remote_domain=domain
         ).delete()
     else:
-        # Local user
-        try:
-            usuario = Usuario.objects.get(username=username)
-            request.user.following.remove(usuario)
-        except Usuario.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Usuario no encontrado'})
-            
+        # Handle local user
+        user_to_unfollow = get_object_or_404(Usuario, username=username)
+        Follow.objects.filter(
+            follower=request.user,
+            following=user_to_unfollow
+        ).delete()
+    
     return JsonResponse({'success': True})
 
 def search_users_remote(query):
@@ -167,17 +167,13 @@ def buscar_usuarios(request):
                     'query': query,
                     'error': 'No puedes seguirte a ti mismo'
                 })
-            
+                
             # For remote users, just create a single result
             results = [{
                 'username': username,
                 'name': username,
                 'domain': domain,
-                'is_local': False,
-                'is_followed': Follow.objects.filter(
-                    follower=request.user,
-                    actor_url=f"https://{domain}/ap/{username}"
-                ).exists() if request.user.is_authenticated else False
+                'is_local': False
             }]
         else:
             # Local user search
@@ -191,13 +187,23 @@ def buscar_usuarios(request):
                 'username': user.username,
                 'name': user.get_full_name(),
                 'domain': get_valor('domain'),
-                'is_local': True,
-                'is_followed': Follow.objects.filter(
-                    follower=request.user,
-                    following=user
-                ).exists() if request.user.is_authenticated else False
+                'is_local': True
             } for user in local_users]
-    
+            
+        # Add follow status for each user if the requester is authenticated
+        if request.user.is_authenticated:
+            for user in results:
+                if user.get('is_local'):
+                    user['is_followed'] = Follow.objects.filter(
+                        follower=request.user,
+                        following__username=user['username']
+                    ).exists()
+                else:
+                    user['is_followed'] = Follow.objects.filter(
+                        follower=request.user,
+                        actor_url=f"https://{user['domain']}/ap/{user['username']}"
+                    ).exists()
+
     return render(request, 'usuario/resultados_busqueda.html', {
         'query': query,
         'users': results
@@ -301,77 +307,3 @@ def fetch_remote_posts(actor_url):
         import traceback
         traceback.print_exc()
         return []
-
-@login_required
-def seguir_usuario(request, username, domain=None):
-    print(f"\nFollowing user: {username}@{domain}")
-    
-    # Don't allow following yourself - check before remote/local logic
-    local_domain = get_valor('domain')
-    if (domain and domain == local_domain and username == request.user.username) or \
-       (not domain and username == request.user.username):
-        return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
-    
-    if domain:
-        # Remote user
-        actor_url = f"https://{domain}/ap/{username}"
-        print(f"\nFollowing remote user at: {actor_url}")
-        
-        # Check if already following
-        existing_follow = Follow.objects.filter(
-            follower=request.user,
-            following__isnull=True,
-            actor_url=actor_url
-        ).exists()
-        
-        if existing_follow:
-            return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
-            
-        try:
-            follow = Follow.objects.create(
-                follower=request.user,
-                actor_url=actor_url
-            )
-            print("New follow created")
-            
-            # Fetch their posts
-            print(f"\nFetching posts from {actor_url}")
-            posts = fetch_remote_posts(actor_url)
-            print(f"Found {len(posts)} posts")
-            for post_data in posts:
-                try:
-                    print(f"Creating/updating post: {post_data['remote_id']}")
-                    RemotePost.objects.get_or_create(
-                        remote_id=post_data['remote_id'],
-                        defaults={
-                            'actor_url': post_data['actor_url'],
-                            'content': post_data['content'],
-                            'image_url': post_data['image_url'],
-                            'published': post_data['published']
-                        }
-                    )
-                except Exception as e:
-                    print(f"Error saving post: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    
-            return JsonResponse({'success': True})
-            
-        except Exception as e:
-            print(f"Error following user: {e}")
-            return JsonResponse({'success': False, 'error': str(e)})
-            
-    else:
-        # Local user
-        try:
-            usuario = Usuario.objects.get(username=username)
-            
-            # Check if already following
-            if request.user.following.filter(id=usuario.id).exists():
-                return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
-                
-            request.user.following.add(usuario)
-            return JsonResponse({'success': True})
-            
-        except Usuario.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Usuario no encontrado'})
