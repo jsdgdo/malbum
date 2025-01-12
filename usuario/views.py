@@ -118,23 +118,23 @@ def follow_user(request, username):
 
 @login_required
 @require_POST
-def unfollow_user(request, username):
-    if '@' in username:
-        # Handle remote user
-        username, domain = username.split('@', 1)
+def unfollow_user(request, username, domain=None):
+    if domain:
+        # Remote user
+        actor_url = f"https://{domain}/ap/{username}"
         Follow.objects.filter(
             follower=request.user,
-            remote_username=username,
-            remote_domain=domain
+            following__isnull=True,
+            actor_url=actor_url
         ).delete()
     else:
-        # Handle local user
-        user_to_unfollow = get_object_or_404(Usuario, username=username)
-        Follow.objects.filter(
-            follower=request.user,
-            following=user_to_unfollow
-        ).delete()
-    
+        # Local user
+        try:
+            usuario = Usuario.objects.get(username=username)
+            request.user.following.remove(usuario)
+        except Usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Usuario no encontrado'})
+            
     return JsonResponse({'success': True})
 
 def search_users_remote(query):
@@ -312,6 +312,12 @@ def fetch_remote_posts(actor_url):
 def seguir_usuario(request, username, domain=None):
     print(f"\nFollowing user: {username}@{domain}")
     
+    # Don't allow following yourself - check before remote/local logic
+    local_domain = get_valor('domain')
+    if (domain and domain == local_domain and username == request.user.username) or \
+       (not domain and username == request.user.username):
+        return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
+    
     if domain:
         # Remote user
         actor_url = f"https://{domain}/ap/{username}"
@@ -326,11 +332,6 @@ def seguir_usuario(request, username, domain=None):
         
         if existing_follow:
             return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
-            
-        # Don't allow following yourself
-        local_domain = get_valor('domain')
-        if domain == local_domain and username == request.user.username:
-            return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
             
         try:
             follow = Follow.objects.create(
@@ -374,10 +375,6 @@ def seguir_usuario(request, username, domain=None):
             # Check if already following
             if request.user.following.filter(id=usuario.id).exists():
                 return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
-                
-            # Don't allow following yourself
-            if usuario == request.user:
-                return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
                 
             request.user.following.add(usuario)
             return JsonResponse({'success': True})
