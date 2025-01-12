@@ -40,10 +40,10 @@
                 {% for post in user.recent_posts %}
                 <div class="col-md-4">
                     <div class="card">
-                        <img src="{{ post.image_url|default:post.imagen.url }}" class="card-img-top" alt="Post image">
+                        <img src="{{ post.image_url }}" class="card-img-top" alt="Post image">
                         <div class="card-body">
-                            <p class="card-text">{{ post.content|default:post.descripcion|truncatechars:100 }}</p>
-                            <p class="text-muted">{{ post.published|default:post.fecha_subida|date:"d/m/Y H:i" }}</p>
+                            <p class="card-text">{{ post.content|truncatechars:100 }}</p>
+                            <p class="text-muted">{{ post.published|date:"d/m/Y H:i" }}</p>
                         </div>
                     </div>
                 </div>

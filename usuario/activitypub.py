@@ -707,13 +707,18 @@ def fetch_remote_posts(actor_url):
                 obj = item.get('object', {})
                 print(f"Object type: {obj.get('type')}")
                 if obj.get('type') in ['Image', 'Note']:  # Include Notes as well
+                    # Use a smaller image URL if available
+                    image_url = obj.get('url') or next(
+                        (att.get('url', '') for att in obj.get('attachment', [])
+                         if att.get('type') in ['Image', 'Document']), ''
+                    )
+                    # Assume a function get_thumbnail_url exists to get a smaller image
+                    thumbnail_url = get_thumbnail_url(image_url)
                     post_data = {
                         'remote_id': obj['id'],
                         'actor_url': actor_url,
                         'content': obj.get('content', ''),
-                        'image_url': obj.get('url') or 
-                                   next((att.get('url', '') for att in obj.get('attachment', []) 
-                                        if att.get('type') in ['Image', 'Document']), ''),
+                        'image_url': thumbnail_url,
                         'published': obj.get('published')
                     }
                     print(f"Found post: {post_data}")
