@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from .models import Usuario, Follow, get_default_user
@@ -744,13 +744,3 @@ def sync_remote_posts():
                     'published': post_data['published']
                 }
             ) 
-
-def user_avatar(request, username):
-    try:
-        user = Usuario.objects.get(username=username)
-        if user.avatar:
-            return HttpResponse(user.avatar, content_type='image/jpeg')
-        else:
-            raise Http404("Avatar not found")
-    except Usuario.DoesNotExist:
-        raise Http404("User not found") 

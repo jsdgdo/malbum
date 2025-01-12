@@ -143,22 +143,12 @@ def search_users_remote(query):
     """Search for remote users"""
     if '@' in query:
         username, domain = query.split('@')
-        actor_url = f"https://{domain}/ap/{username}"
-        
-        # Fetch user details
-        user_data = {
+        return [{
             'username': username,
-            'name': username,  # Replace with actual name if available
+            'name': username,
             'domain': domain,
-            'avatar_url': f"https://{domain}/ap/{username}/avatar",  # Ensure this URL returns an image
             'is_local': False
-        }
-        
-        # Fetch recent posts
-        recent_posts = fetch_remote_posts(actor_url)[:3]
-        user_data['recent_posts'] = recent_posts
-        
-        return [user_data]
+        }]
     return []
 
 @login_required

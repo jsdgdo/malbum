@@ -1,39 +1,119 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resultados de búsqueda{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        {% for user in users %}
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-body d-flex align-items-center">
-                    {% if user.avatar_url %}
-                    <img src="{{ user.avatar_url }}" alt="Avatar" class="rounded-circle mr-3" style="width: 60px; height: 60px;">
-                    {% else %}
-                    <div class="avatar-placeholder rounded-circle mr-3" style="width: 60px; height: 60px; background-color: #ccc; display: flex; align-items: center; justify-content: center;">
-                        <span>{{ user.username|slice:":1"|upper }}</span>
-                    </div>
-                    {% endif %}
-                    <div>
-                        <h5 class="card-title">{{ user.name }}</h5>
-                        <p class="card-text">{{ user.domain }}</p>
-                        <button class="btn btn-primary follow-btn" data-username="{{ user.username }}" data-domain="{{ user.domain }}">Follow</button>
+{% csrf_token %}
+<div class="container mt-5">
+    <h2>Resultados de búsqueda para "{{ query }}"</h2>
+    
+    {% if users %}
+        <div class="row">
+            {% for user in users %}
+                <div class="col-md-4 mb-4">
+                    <div class="card search-result-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                {% if user.avatar_url %}
+                                    <img src="{{ user.avatar_url }}" 
+                                         class="rounded-circle" 
+                                         alt="Avatar de {{ user.nombreCompleto }}"
+                                         style="width: 64px; height: 64px; object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+                                         style="width: 64px; height: 64px; color: white;">
+                                        {{ user.username|make_list|first|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-1">{{ user.nombreCompleto }}</h5>
+                                <p class="text-muted mb-2">
+                                    @{{ user.username }}
+                                    {% if user.is_remote %}
+                                        <span class="badge bg-secondary">{{ user.domain }}</span>
+                                    {% endif %}
+                                </p>
+                                {% if user.bio %}
+                                    <p class="card-text small">{{ user.bio|safe|truncatechars:100 }}</p>
+                                {% endif %}
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <a href="{{ user.actor_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        Ver perfil
+                                    </a>
+                                    {% if user.is_followed %}
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="unfollowUser('{{ user.username }}', '{{ user.domain }}')">
+                                            Dejar de seguir
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-primary" 
+                                                onclick="followUser('{{ user.username }}', '{{ user.domain }}', '{{ user.actor_url }}')">
+                                            Seguir
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <h6>Recent Posts</h6>
-                    <ul class="list-unstyled">
-                        {% for post in user.recent_posts %}
-                        <li>
-                            <img src="{{ post.image_url }}" alt="Post Image" style="width: 50px; height: 50px;">
-                            <span>{{ post.content|truncatewords:10 }}</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
+    {% else %}
+        <p class="text-muted">No se encontraron usuarios que coincidan con tu búsqueda.</p>
+    {% endif %}
 </div>
+
+<script>
+function followUser(username, domain, actorUrl) {
+    fetch(`/usuario/${username}@${domain}/follow/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'actor_url': actorUrl,
+            'remote_username': username,
+            'remote_domain': domain
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();  // Reload to update buttons
+        } else {
+            alert(data.error || 'Error al seguir al usuario');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+    });
+}
+
+function unfollowUser(username, domain) {
+    if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
+        fetch(`/usuario/${username}@${domain}/unfollow/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();  // Reload to update buttons
+            } else {
+                alert(data.error || 'Error al dejar de seguir al usuario');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+</script>
 {% endblock %} 
