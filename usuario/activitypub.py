@@ -158,7 +158,7 @@ def foto_info(request, foto_id):
         "url": [
             {
                 "type": "Link",
-                "href": request.build_absolute_uri(foto.get_original_url()),
+                "href": request.build_absolute_uri(foto.get_thumbnail_url()),
                 "mediaType": "image/jpeg"
             }
         ],
@@ -581,7 +581,7 @@ def search_instance(query, domain):
             for account in data.get('accounts', []):
                 results.append({
                     'username': account.get('username'),
-                    'nombreCompleto': account.get('display_name'),
+                    'name': account.get('display_name'),
                     'bio': account.get('note'),
                     'actor_url': account.get('url'),
                     'avatar_url': account.get('avatar'),
@@ -625,7 +625,7 @@ def find_user_on_instance(username, domain):
                     profile = profile_response.json()
                     return {
                         'username': profile.get('preferredUsername', ''),
-                        'nombreCompleto': profile.get('name', ''),
+                        'name': profile.get('name', ''),
                         'bio': profile.get('summary', ''),
                         'actor_url': profile.get('id', ''),
                         'avatar_url': profile.get('icon', {}).get('url', ''),

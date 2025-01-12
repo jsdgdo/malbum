@@ -6,7 +6,7 @@
 {% block content %}
 {% csrf_token %}
 <div class="container mt-5">
-    <h2>Resultados de búsqueda para "{{ query }}"</h2>
+    <h2>Resultado de búsqueda para "{{ query }}"</h2>
     
     {% if users %}
         <div class="row">
@@ -18,7 +18,7 @@
                                 {% if user.avatar_url %}
                                     <img src="{{ user.avatar_url }}" 
                                          class="rounded-circle" 
-                                         alt="Avatar de {{ user.nombreCompleto }}"
+                                         alt="Avatar de {{ user.name }}"
                                          style="width: 64px; height: 64px; object-fit: cover;">
                                 {% else %}
                                     <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
@@ -28,7 +28,7 @@
                                 {% endif %}
                             </div>
                             <div class="flex-grow-1">
-                                <h5 class="card-title mb-1">{{ user.nombreCompleto }}</h5>
+                                <h5 class="card-title mb-10">{{ user.name }}</h5>
                                 <p class="text-muted mb-2">
                                     @{{ user.username }}
                                     {% if user.is_remote %}

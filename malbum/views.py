@@ -35,7 +35,7 @@ def fetch_remote_posts(actor_url):
     print("Getting actor info...")
     headers = {
         'Accept': 'application/activity+json',
-        'User-Agent': 'MAlbum/1.0 (+https://malbum.org)'
+        'User-Agent': f'MAlbum/1.0 (+{get_valor("dominio")})'
     }
     print(f"Using headers: {headers}")
     
@@ -149,6 +149,7 @@ def tablon(request):
     for follow in follows:
         print(f"\nChecking for new posts from {follow.actor_url}")
         posts = fetch_remote_posts(follow.actor_url)
+        print(posts)
         print(f"Found {len(posts)} posts")
         for post_data in posts:
             try:
