@@ -13,7 +13,7 @@ from django.db import models
 from .activitypub import search_users_remote, fetch_remote_posts
 import json
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 import requests
 
 
@@ -164,7 +164,7 @@ def buscar_usuarios(request):
             'name': username,  # We'll try to fetch the real name
             'domain': domain,
             'is_local': False,
-            'avatar_url': f"https://{domain}/ap/{username}/avatar",  # Default avatar URL
+            'avatar_url': None,  # We'll try to fetch this
             'recent_posts': []  # We'll populate this
         }]
         
@@ -180,29 +180,12 @@ def buscar_usuarios(request):
                 actor_data = response.json()
                 results[0]['name'] = actor_data.get('name', username)
                 if 'icon' in actor_data:
-                    results[0]['avatar_url'] = actor_data['icon'].get('url', results[0]['avatar_url'])
+                    results[0]['avatar_url'] = actor_data['icon'].get('url')
                 
                 # Fetch recent posts
-                outbox_url = actor_data.get('outbox')
-                if outbox_url:
-                    posts_response = requests.get(outbox_url, headers=headers)
-                    if posts_response.status_code == 200:
-                        posts_data = posts_response.json()
-                        items = posts_data.get('orderedItems', [])[:3]  # Get last 3 posts
-                        for item in items:
-                            if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Note':
-                                obj = item['object']
-                                attachments = obj.get('attachment', [])
-                                image_urls = [
-                                    att['url'] for att in attachments 
-                                    if att.get('mediaType', '').startswith('image/')
-                                ]
-                                if image_urls:
-                                    results[0]['recent_posts'].append({
-                                        'content': obj.get('content', ''),
-                                        'image_url': image_urls[0],
-                                        'published': obj.get('published')
-                                    })
+                posts = fetch_remote_posts(actor_url)
+                results[0]['recent_posts'] = posts[:3]  # Only take first 3 posts
+                
         except Exception as e:
             print(f"Error fetching remote user info: {e}")
             
