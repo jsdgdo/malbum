@@ -60,13 +60,13 @@ def perfil_usuario(request, username):
 
 @login_required
 @require_POST
-def follow_user(request, username):
-    print(f"\nFollowing user: {username}")
+def follow(request):
+    username = request.POST.get('username')
+    domain = request.POST.get('domain')
     
-    # Parse username and domain
-    if '@' in username:
-        username, domain = username.split('@')
-        
+    print(f"\nFollowing remote user: {username}@{domain}")
+    
+    try:
         # Don't allow following yourself
         local_domain = get_valor('domain')
         if domain == local_domain and username == request.user.username:
@@ -82,10 +82,7 @@ def follow_user(request, username):
         ).first()
         
         if follow:
-            # Unfollow
-            follow.delete()
-            print("Unfollowed user")
-            return JsonResponse({'success': True})
+            return JsonResponse({'success': False, 'error': 'Ya sigues a este usuario'})
         
         # Create new follow
         follow = Follow.objects.create(
@@ -114,7 +111,12 @@ def follow_user(request, username):
                 import traceback
                 traceback.print_exc()
                 
-    return JsonResponse({'success': True})
+        return JsonResponse({'success': True})
+    except Exception as e:
+        print(f"Error following: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @require_POST
 @login_required
