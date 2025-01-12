@@ -51,7 +51,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function follow(username, domain) {
-    fetch('/usuario/follow/', {
+    fetch('/usuario/seguir/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -75,7 +75,7 @@ function follow(username, domain) {
 
 function unfollow(username, domain) {
     if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
-        fetch('/usuario/unfollow/', {
+        fetch('/usuario/dejar-de-seguir/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
