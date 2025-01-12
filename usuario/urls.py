@@ -14,9 +14,10 @@ urlpatterns = [
     path('recuperar-contrasena/hecho/', auth_views.PasswordResetDoneView.as_view(template_name='usuario/recuperar-contrasena-hecho.html'), name='password_reset_done'),
     path('recuperar-contrasena-confirmar/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='usuario/recuperar-contrasena-confirmar.html'), name='password_reset_confirm'),
     path('recuperar-contrasena-completo/', auth_views.PasswordResetCompleteView.as_view(template_name='usuario/recuperar-contrasena-completo.html'), name='password_reset_complete'),
+    path('editar/', views.editar_usuario, name='editar_usuario'),
+    path('buscar/', views.buscar_usuarios, name='buscar_usuarios'),
     path('<str:username>/follow/', views.follow_user, name='follow_user'),
     path('<str:username>/unfollow/', views.unfollow_user, name='unfollow_user'),
-    path('buscar/', views.buscar_usuarios, name='buscar_usuarios'),
     path('<str:username>/', views.perfil_usuario, name='perfil_usuario'),
 ]
 

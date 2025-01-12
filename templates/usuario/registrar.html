@@ -1,74 +1,104 @@
 <!-- templates/home.html -->
 {% extends 'base.html' %}
 
-{% block title %}Registro de usuario publicador{% endblock %}
+{% block title %}
+    {% if is_edit %}
+        Editar usuario publicador
+    {% else %}
+        Registro de usuario publicador
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-    {% load widget_tweaks %} 
+    {% load widget_tweaks %}
 
-    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-    {% csrf_token %}
-    <!-- Render form fields -->
-    <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
-        <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
-        {{ form.username|add_class:"form-control" }}
-        {% if form.username.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.username.errors|join:", " }}
+    <div class="container mt-5">
+        <h2 class="mb-4">
+            {% if is_edit %}
+                Editar usuario publicador
+            {% else %}
+                Registro de usuario publicador
+            {% endif %}
+        </h2>
+
+        <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <!-- Username field -->
+            <div class="form-group mb-3 {% if form.username.errors %}has-error has-feedback{% endif %}">
+                <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                {{ form.username|add_class:"form-control" }}
+                {% if form.username.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.username.errors|join:", " }}
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
-    </div>
 
-    <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
-        <label for="{{ form.nombreCompleto.id_for_label }}" class="form-label">{{ form.nombreCompleto.label }}</label>
-        {{ form.nombreCompleto|add_class:"form-control" }}
-        {% if form.nombreCompleto.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.nombreCompleto.errors|join:", " }}
+            <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
+                <label for="{{ form.nombreCompleto.id_for_label }}" class="form-label">{{ form.nombreCompleto.label }}</label>
+                {{ form.nombreCompleto|add_class:"form-control" }}
+                {% if form.nombreCompleto.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.nombreCompleto.errors|join:", " }}
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
-    </div>
 
-    <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
-        <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
-        {{ form.email|add_class:"form-control" }}
-        {% if form.email.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.email.errors|join:", " }}
+            <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
+                <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                {{ form.email|add_class:"form-control" }}
+                {% if form.email.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.email.errors|join:", " }}
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
-    </div>
 
-    <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
-        <label for="{{ form.fotoDePerfil.id_for_label }}" class="form-label">{{ form.fotoDePerfil.label }}</label>
-        {{ form.fotoDePerfil|add_class:"form-control" }}
-        {% if form.fotoDePerfil.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.fotoDePerfil.errors|join:", " }}
+            <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
+                <label for="{{ form.fotoDePerfil.id_for_label }}" class="form-label">{{ form.fotoDePerfil.label }}</label>
+                {{ form.fotoDePerfil|add_class:"form-control" }}
+                {% if form.fotoDePerfil.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.fotoDePerfil.errors|join:", " }}
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
-    </div>
 
-    <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
-        <label for="{{ form.password1.id_for_label }}" class="form-label">Contraseña</label>
-        {{ form.password1|add_class:"form-control" }}
-        {% if form.password1.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.password1.errors|join:", " }}
+            <!-- Password fields with conditional labels -->
+            <div class="form-group mb-3 {% if form.password1.errors %}has-error has-feedback{% endif %}">
+                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                    {% if is_edit %}
+                        Nueva contraseña (dejar en blanco para mantener la actual)
+                    {% else %}
+                        Contraseña
+                    {% endif %}
+                </label>
+                {{ form.password1|add_class:"form-control" }}
+                {% if form.password1.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.password1.errors|join:", " }}
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
-    </div>
 
-    <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
-        <label for="{{ form.password2.id_for_label }}" class="form-label">Repetir contraseña</label>
-        {{ form.password2|add_class:"form-control" }}
-        {% if form.password2.errors %}
-            <div class="invalid-feedback d-block">
-                {{ form.password2.errors|join:", " }}
+            <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
+                <label for="{{ form.password2.id_for_label }}" class="form-label">Repetir contraseña</label>
+                {{ form.password2|add_class:"form-control" }}
+                {% if form.password2.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.password2.errors|join:", " }}
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
-    </div>
 
-    <button type="submit" class="btn btn-primary">Registrarse</button>
-    </form>
+            <button type="submit" class="btn btn-primary">
+                {% if is_edit %}
+                    Guardar cambios
+                {% else %}
+                    Registrarse
+                {% endif %}
+            </button>
+        </form>
+    </div>
 {% endblock %}

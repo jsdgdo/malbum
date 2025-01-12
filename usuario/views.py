@@ -347,3 +347,23 @@ def fetch_remote_posts(actor_url):
         import traceback
         traceback.print_exc()
         return []
+
+@login_required
+def editar_usuario(request):
+    if request.method == "POST":
+        form = RegistroUsuarioForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            usuario = form.save(commit=False)
+            if not form.cleaned_data['password1']:  # If no new password provided
+                usuario.password = request.user.password  # Keep existing password
+            usuario.save()
+            return redirect("panel_control")
+    else:
+        form = RegistroUsuarioForm(instance=request.user)
+        form.fields['password1'].required = False
+        form.fields['password2'].required = False
+    
+    return render(request, "usuario/registrar.html", {
+        "form": form,
+        "is_edit": True  # To differentiate between register and edit
+    })
