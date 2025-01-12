@@ -309,7 +309,7 @@ def outbox(request, username):
         attachment = {
             "type": "Image",  # Changed from Document to Image
             "mediaType": "image/jpeg",
-            "url": request.build_absolute_uri(foto.get_original_url()),
+            "url": request.build_absolute_uri(foto.get_thumbnail_url()),
             "name": foto.titulo
         }
         
