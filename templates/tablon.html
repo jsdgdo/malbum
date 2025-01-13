@@ -15,8 +15,10 @@
                     <div class="col-md-4 mb-4">
                         <div class="card">
                             {% if foto.imagen %}
-                                {# Local photo #}
-                                <img src="{{ foto.get_thumbnail_url }}" class="card-img-top" alt="{{ foto.titulo }}">
+                                <div class="toHide"  data-post-id="{{ foto.id }}">
+                                    <button class="hide-button" onclick="hidePost({{ foto.id }})">Ocultar</button>
+                                    <img src="{{ foto.get_thumbnail_url }}" class="card-img-top" alt="{{ foto.titulo }}">
+                                </div>
                                 <div class="card-body">
                                     <h5 class="card-title">{{ foto.titulo }}</h5>
                                     <p class="card-text">{{ foto.descripcion }}</p>
@@ -25,11 +27,14 @@
                                 </div>
                             {% else %}
                                 {# Remote photo #}
-                                <img src="{{ foto.image_url }}" class="card-img-top" alt="Remote photo">
+                                <div class="toHide"  data-post-id="{{ foto.id }}">
+                                    <button class="hide-button" onclick="hidePost({{ foto.id }})">Ocultar</button>
+                                    <img src="{{ foto.image_url }}" class="card-img-top" alt="Remote photo">
+                                </div>
                                 <div class="card-body">
                                     <div class="content">{{ foto.content|safe }}</div>
                                     <p class="text-muted">{{ foto.published|date:"d/m/Y H:i" }}</p>
-                                    <p class="text-muted">De <a href="{{ foto.actor_url }}">{{foto.actor_url}}</a></p>
+                                    <p class="text-muted">Por <a href="{{ foto.actor_url }}">{{foto.actor_url}}</a></p>
                                 </div>
                             {% endif %}
                         </div>

@@ -153,10 +153,16 @@ button, .btn {
   background-color: var(--tertiary) !important;
 }
 
+/* detalle */
+.img-fluid {
+  width: 100%;
+  height: auto;
+}
 
 .blurred img {
   filter: blur(10px);
   opacity: 0.5;
+  transition: all 0.3s ease;
 }
 
 .blurred .card-body {
@@ -171,11 +177,19 @@ button, .btn {
   position: absolute;
   top: 10px;
   right: 10px;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--accent);
+  color: var(--black);
   border: none;
   padding: 5px 10px;
+  border-radius: 4px;
   cursor: pointer;
   z-index: 100;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.hide-button:hover {
+  opacity: 1;
 }
 
 .card-img-top {
@@ -247,4 +261,51 @@ button, .btn {
         width: 100%;
         margin: 0.5rem 0;
     }
+}
+
+/* Add these styles for hidden posts */
+.toHide.hidden img {
+    filter: blur(10px);
+    opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.toHide.hidden .card-body {
+    display: none;
+}
+
+/* Keep existing blur overlay styles */
+.blur-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: none;
+    z-index: 10;
+}
+
+.blur-overlay.active {
+    display: flex;
+}
+
+/* Hide button styles */
+.hide-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--accent);
+    color: var(--black);
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 100;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.hide-button:hover {
+    opacity: 1;
 }
