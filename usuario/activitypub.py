@@ -1,5 +1,5 @@
-from django.http import JsonResponse, HttpResponse, redirect
-from django.shortcuts import get_object_or_404
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from .models import Usuario, Follow, get_default_user
 from malbum.models import Foto
