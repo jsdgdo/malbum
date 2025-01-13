@@ -36,7 +36,7 @@
         </button>
       </div>
     </nav>
-    <div class="container mt-5 mb-5 col-md-8">
+    <div class="container mt-5 mb-5 col-md-8" style="height: 100vh;">
       <h2>¿Olvidaste tu contraseña?</h2>
       <p>Ingresa tu correo electrónico y te enviaremos instrucciones para restablecerla.</p>
       <form method="post">
@@ -51,6 +51,12 @@
         ¿Ya tienes una cuenta? <a href="{% url 'iniciarSesion' %}">Inicia sesión</a>.
       </p>
     </div>
+    <footer style="text-align: right">
+      <div class="container mt-5 mb-5 col-md-8">
+        <p>Este sitio está hecho con <a href="https://github.com/jsdgdo/malbum" target="_blank">Malbum</a>
+        </p>
+      </div>
+    </footer>
     <script
       src="https://code.jquery.com/jquery-3.7.1.min.js"
       integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="

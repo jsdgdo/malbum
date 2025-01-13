@@ -156,6 +156,18 @@ button, .btn {
   background-color: var(--tertiary) !important;
 }
 
+/* footer */
+footer {
+  margin-top: 20px;
+  text-align: right;
+  a {
+    color: var(--accent);
+    &:hover {
+      color: var(--white);
+    }
+  }
+}
+
 /* detalle */
 .img-fluid {
   width: 100%;
