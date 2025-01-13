@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-1)#c16_7jxnzm^(ome1i8hu-fd)p-y0vr4!^)m$hf0g0!6z9uj'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['malbum.org', 'localhost', '127.0.0.1', '*']
 
 
 # Application definition

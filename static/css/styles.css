@@ -1,3 +1,137 @@
+/* font styles */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Poppins", serif;
+  font-weight: 600;
+  font-style: normal;
+  color: var(--accent);
+}
+h1, h2{
+  margin-bottom: 2rem;
+}
+body {
+  font-family: "Questrial", serif;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.03em;
+}
+
+/* colors */
+:root{
+  --primary: #323031; 
+  --secondary: #3d3b3c;
+  --tertiary: #7f7979;
+  --accent: #c1bdb3;
+  --complement: #5f5b6b;
+  --white: #f5f5f5;
+  --black: #121212;
+}
+
+body {
+  background-color: var(--primary);
+  color: var(--white);
+  a {
+    color: var(--accent);
+    text-decoration: underline;
+    &:hover {
+      color: var(--white);
+      text-decoration: underline;
+    }
+  }
+  p {
+    color: var(--white);
+  }
+  .text-muted {
+    color: var(--white) !important;
+  }
+}
+/* navegacion */
+.navbar {
+  background-color: var(--secondary);
+  padding: 0.8em;
+  margin: 1.2em;
+  border-radius: 0.5em;
+  a {
+    color: var(--white);
+    text-decoration: none;
+    &:hover, &:active, &:focus {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  }
+  button, .btn {
+    color: var(--white);
+    &.btn-primary {
+      background-color: var(--accent);
+      color: var(--black);
+      border: none;
+      &:hover {
+        background-color: var(--complement);
+        color: var(--white);
+      }
+    }
+    &.btn-outline-primary {
+      border: 1px solid var(--accent);
+      &:hover {
+        background-color: var(--accent);
+        color: var(--black);
+      }
+    }
+    &.btn-link{
+      &:hover{
+        color: var(--accent);
+      }
+    }
+  }
+  input {
+    border: none;
+    background-color: var(--tertiary);
+    color: var(--white);
+    &::placeholder {
+      color: var(--accent);
+    }
+  }
+}
+.navbar-toggler {
+  background-color: var(--white);
+}
+.navbar-nav{
+  .nav-item {
+    margin-left: 0.8rem;
+  }
+}
+
+/* logo */
+.logo {
+  width: 2.2em;
+  height: auto;
+}
+
+/* buttons */
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--black);
+  border: none;
+  &:hover {
+    background-color: var(--complement);
+    color: var(--white);
+  }
+}
+.btn-outline-primary {
+  border: 1px solid var(--accent);
+  &:hover {
+    background-color: var(--accent);
+    color: var(--black);
+  }
+}
+.btn-link{
+  &:hover{
+    color: var(--accent);
+  }
+}
+
+
+
 .blurred img {
   filter: blur(10px);
   opacity: 0.5;

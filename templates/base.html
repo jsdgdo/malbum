@@ -13,12 +13,17 @@
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Questrial&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg">
       <div class="container-fluid">
-        <a class="navbar-brand" href="{% url 'inicio' %}">Malbum</a>
+        <a class="navbar-brand" href="{% url 'inicio' %}">
+          <img src="{% static 'img/malbumlogo.svg' %}" alt="Malbum logo" class="logo">
+        </a>
         <button
           class="navbar-toggler"
           type="button"
@@ -32,12 +37,9 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'inicio' %}">Inicio</a>
-            </li>
             {% if user.is_authenticated %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'subir_foto' %}">Subir Foto</a>
+                <a class="btn btn-primary" href="{% url 'subir_foto' %}">Subir Foto</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'gestionar_colecciones' %}">Colecciones</a>
@@ -47,7 +49,7 @@
           {% if user.is_authenticated %}
           <form class="d-flex me-3" action="{% url 'buscar_usuarios' %}" method="GET">
             <input class="form-control me-2" type="search" 
-                   placeholder="Buscar usuarios..." 
+                   placeholder="Buscar usuario" 
                    name="q" 
                    value="{{ request.GET.q }}"
                    aria-label="Buscar">
