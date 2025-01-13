@@ -356,7 +356,7 @@ def editar_usuario(request):
         if form.is_valid():
             usuario = form.save()
             messages.success(request, 'Perfil actualizado correctamente')
-            return redirect("panel_control")
+            return redirect("control")
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario')
     else:

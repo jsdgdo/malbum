@@ -7,15 +7,22 @@ class RegistroUsuarioForm(UserCreationForm):
     email = forms.EmailField(required=True, label="Email")
     nombreCompleto = forms.CharField(required=True, label="Nombre completo")
     fotoDePerfil = forms.ImageField(required=False, label="Foto de perfil")
+    bio = forms.CharField(
+        required=False, 
+        label="Biografía",
+        widget=forms.Textarea(attrs={'rows': 3}),
+        help_text="Una breve descripción sobre ti"
+    )
 
     class Meta:
         model = Usuario
-        fields = ['username', 'nombreCompleto', 'email', 'fotoDePerfil']
+        fields = ['username', 'nombreCompleto', 'email', 'fotoDePerfil', 'bio']
 
     def save(self, commit=True):
         usuario = super().save(commit=False)
         usuario.email = self.cleaned_data['email']
         usuario.nombreCompleto = self.cleaned_data['nombreCompleto']
+        usuario.bio = self.cleaned_data['bio']
         if 'fotoDePerfil' in self.cleaned_data:
             usuario.fotoDePerfil = self.cleaned_data['fotoDePerfil']
         usuario.is_staff = True
@@ -28,20 +35,26 @@ class EditarUsuarioForm(forms.ModelForm):
     email = forms.EmailField(required=True, label="Email")
     nombreCompleto = forms.CharField(required=True, label="Nombre completo")
     fotoDePerfil = forms.ImageField(required=False, label="Foto de perfil")
+    bio = forms.CharField(
+        required=False, 
+        label="Biografía",
+        widget=forms.Textarea(attrs={'rows': 3}),
+        help_text="Una breve descripción sobre ti"
+    )
     password1 = forms.CharField(
         required=False, 
-        widget=forms.PasswordInput(render_value=False),  # Never render the value
+        widget=forms.PasswordInput(render_value=False),
         label="Nueva contraseña"
     )
     password2 = forms.CharField(
         required=False, 
-        widget=forms.PasswordInput(render_value=False),  # Never render the value
+        widget=forms.PasswordInput(render_value=False),
         label="Confirmar nueva contraseña"
     )
 
     class Meta:
         model = Usuario
-        fields = ['username', 'nombreCompleto', 'email', 'fotoDePerfil']
+        fields = ['username', 'nombreCompleto', 'email', 'fotoDePerfil', 'bio']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
