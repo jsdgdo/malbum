@@ -112,4 +112,9 @@ class RemotePost(models.Model):
         
     def __str__(self):
         return f"Post {self.remote_id} from {self.actor_url}"
+        
+    @property
+    def username(self):
+        """Extract username from actor_url"""
+        return self.actor_url.split('/')[-1]
   

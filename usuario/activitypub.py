@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from .models import Usuario, Follow, get_default_user
@@ -119,6 +119,11 @@ def get_foto_url(foto_id):
 def actor_info(request, username):
     usuario = get_object_or_404(Usuario, username=username)
     actor_url = get_actor_url(username)
+    
+    # Check if request is from a browser
+    accept_header = request.headers.get('Accept', '')
+    if 'text/html' in accept_header and 'application/activity+json' not in accept_header:
+        return redirect('perfil_usuario', username=username)
     
     response = JsonResponse({
         "@context": "https://www.w3.org/ns/activitystreams",
