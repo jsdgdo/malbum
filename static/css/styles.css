@@ -9,6 +9,9 @@ h1, h2, h3, h4, h5, h6 {
 h1, h2{
   margin-bottom: 2rem;
 }
+h4 {
+  margin-bottom: 1rem;
+}
 body {
   font-family: "Questrial", serif;
   font-weight: 400;
@@ -25,6 +28,8 @@ body {
   --complement: #5f5b6b;
   --white: #f5f5f5;
   --black: #121212;
+  --danger: #d63939;
+  --danger-dark: #992626;
 }
 
 body {
@@ -59,38 +64,6 @@ body {
       text-decoration: none;
     }
   }
-  button, .btn {
-    color: var(--white);
-    &.btn-primary {
-      background-color: var(--accent);
-      color: var(--black);
-      border: none;
-      &:hover {
-        background-color: var(--complement);
-        color: var(--white);
-      }
-    }
-    &.btn-outline-primary {
-      border: 1px solid var(--accent);
-      &:hover {
-        background-color: var(--accent);
-        color: var(--black);
-      }
-    }
-    &.btn-link{
-      &:hover{
-        color: var(--accent);
-      }
-    }
-  }
-  input {
-    border: none;
-    background-color: var(--tertiary);
-    color: var(--white);
-    &::placeholder {
-      color: var(--accent);
-    }
-  }
 }
 .navbar-toggler {
   background-color: var(--white);
@@ -100,36 +73,85 @@ body {
     margin-left: 0.8rem;
   }
 }
-
 /* logo */
 .logo {
   width: 2.2em;
   height: auto;
 }
-
-/* buttons */
-.btn-primary {
-  background-color: var(--accent);
-  color: var(--black);
+/* inputs */
+.form-control {
   border: none;
-  &:hover {
-    background-color: var(--complement);
+  background-color: var(--tertiary);
+  color: var(--white);
+  &:focus {
+    background-color: var(--tertiary);
     color: var(--white);
-  }
-}
-.btn-outline-primary {
-  border: 1px solid var(--accent);
-  &:hover {
-    background-color: var(--accent);
-    color: var(--black);
-  }
-}
-.btn-link{
-  &:hover{
+  } 
+  &::placeholder {
     color: var(--accent);
   }
 }
 
+/* buttons */
+button, .btn {
+  color: var(--white);
+  &:hover {
+    text-decoration: none;
+  }
+  &.btn-primary {
+    background-color: var(--accent);
+    color: var(--black);
+    border: none;
+    &:hover {
+      background-color: var(--complement);
+      color: var(--white);
+    }
+  }
+  &.btn-outline-primary {
+    border: 1px solid var(--accent);
+    &:hover {
+      background-color: var(--accent);
+      color: var(--black);
+    }
+  }
+  &.btn-link{
+    &:hover{
+      color: var(--accent);
+    }
+  }
+  &.btn-danger{
+    background-color: var(--danger);
+    &:hover{
+      background-color: var(--danger-dark);
+    }
+  }
+}
+/* tarjetas */
+.card{
+  background-color: var(--secondary);
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  h5{
+    color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Grupos de lista */
+.list-group{
+  .list-group-item{
+    background-color: var(--secondary);
+    color: var(--white);
+    &.active{
+      border-color: var(--complement);
+    }
+  }
+}
+
+/* badges */
+.bg-secondary {
+  background-color: var(--tertiary) !important;
+}
 
 
 .blurred img {
