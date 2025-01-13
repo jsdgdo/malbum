@@ -2,11 +2,11 @@
 {% block title %}Importar Datos{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5 mb-5 col-md-8">
   <h3>Importar Datos</h3>
   <form method="post" enctype="multipart/form-data" id="importForm">
     {% csrf_token %}
-    <div class="form-group">
+    <div class="form-group mb-4">
       <label for="data_file">Seleccionar archivo JSON o ZIP</label>
       <input type="file" id="data_file" name="data_file" class="form-control">
     </div>
