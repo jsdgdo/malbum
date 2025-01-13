@@ -43,11 +43,14 @@ body {
       text-decoration: underline;
     }
   }
-  p {
+  p, label {
     color: var(--white);
   }
   .text-muted {
     color: var(--white) !important;
+    .form-text {
+      color: var(--accent);
+    }
   }
 }
 /* navegacion */

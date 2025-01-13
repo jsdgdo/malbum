@@ -3,7 +3,7 @@
 
 {% block content %}
 {% load widget_tweaks %}
-<div class="container mt-5">
+<div class="container mt-5 mb-5 col-md-8">
   <h2 class="text-center">{% if foto %}Editar Foto{% else %}Subir Nueva Foto{% endif %}</h2>
   {% if form.errors %}
     <div class="alert alert-danger">
@@ -18,36 +18,36 @@
   {% endif %}
   <form method="post" enctype="multipart/form-data" action="{% if foto %}{% url 'editar_foto' foto.id %}{% else %}{% url 'subir_foto' %}{% endif %}" class="needs-validation" novalidate>
     {% csrf_token %}
-    <div class="form-group">
+    <div class="form-group mb-4">
       <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
       {{ form.titulo|add_class:"form-control"}}
     </div>
-    <div class="form-group">
+    <div class="form-group mb-4">
       <label for="{{ form.imagen.id_for_label }}" class="form-label">{{ form.imagen.label }}</label>
       {{ form.imagen|add_class:"form-control" }}
     </div>
-    <div>
+    <div class="mb-4">
       <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion.label}}</label>
       {{ form.descripcion|add_class:"form-control" }}
     </div>
-    <div>
+    <div class="mb-4">
       <label for="{{ form.alt_descripcion.id_for_label }}" class="form-label">{{ form.alt_descripcion.label}}</label>
       {{ form.alt_descripcion|add_class:"form-control" }}
     </div>
-    <div>
+    <div class="mb-4">
       <label for="{{ form.licencia.id_for_label }}" class="form-label">{{ form.licencia.label}}</label>
       {{ form.licencia|add_class:"form-control" }}
     </div>
-    <div>
+    <div class="mb-4">
       {{form.advertencia_contenido|add_class:"form-check-input"}}
       <label for="{{ form.advertencia_contenido.id_for_label }}" class="form-check-label">{{ form.advertencia_contenido.label}}</label>
     </div>
-    <div>
+    <div class="mb-4">
       <label for="{{ form.etiquetas.id_for_label }}" class="form-check-label">{{ form.etiquetas.label}}</label>
       {{form.etiquetas|add_class:"form-control"}}
       <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#modalAgregarEtiqueta">Crear nueva etiqueta</button>
     </div>
-    <div>
+    <div class="mb-4">
       <label for="{{ form.colecciones.id_for_label }}" class="form-check-label">{{ form.colecciones.label}}</label>
       {{form.colecciones|add_class:"form-control"}}
       <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#modalAgregarColeccion">Crear nueva colección</button>

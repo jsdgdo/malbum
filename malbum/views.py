@@ -103,6 +103,7 @@ def fetch_remote_posts(actor_url):
                         post = {
                             'remote_id': obj['id'],
                             'actor_url': item['actor'],
+                            'actor_username': item['actor'].split('/')[-1],
                             'content': obj.get('content', ''),
                             'image_url': image_urls[0],  # Use first image
                             'published': obj.get('published')
@@ -173,6 +174,7 @@ def tablon(request):
                             remote_id=post_data['remote_id'],
                             defaults={
                                 'actor_url': post_data['actor_url'],
+                                'actor_username': post_data['actor_url'].split('/')[-1],
                                 'content': post_data['content'],
                                 'image_url': post_data['image_url'],
                                 'published': post_data['published']

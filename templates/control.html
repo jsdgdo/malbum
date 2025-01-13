@@ -2,18 +2,44 @@
 {% block title %}Panel de Control{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5 col-md-8 mb-5">
   <h2 class="text-center">Panel de Control</h2>
 
   <div class="row mt-4">
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
+          <h3>Editar usuario publicador</h3>
+          <p>Para modificar los datos del usuario publicador</p>
+          <a href="{% url 'editar_usuario' %}" class="btn btn-primary">
+            Editar usuario
+          </a>
+        </div>
+      </div>
+      <div class="card mt-4">
+        <div class="card-body">
           <h3>Solicitudes de Imágenes</h3>
           <p>Gestiona las solicitudes de imágenes en alta resolución.</p>
           <a href="{% url 'gestionar_solicitudes' %}" class="btn btn-primary">
             Ver Solicitudes
           </a>
+        </div>
+      </div>
+      <div class="card mt-4">
+        <div class="card-body">
+          <h3>Exportar Datos</h3>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="export_data" value="1">
+            <div class="form-group">
+              <label for="include_images">¿Incluir imágenes en la exportación?</label>
+              <select name="include_images" id="include_images" class="form-control">
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Exportar Datos</button>
+          </form>
         </div>
       </div>
     </div>
@@ -48,34 +74,10 @@
 
   <div class="row mt-4">
     <div class="col-md-6">
-      <div class="card">
-        <div class="card-body">
-          <h3>Exportar Datos</h3>
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="export_data" value="1">
-            <div class="form-group">
-              <label for="include_images">¿Incluir imágenes en la exportación?</label>
-              <select name="include_images" id="include_images" class="form-control">
-                <option value="false">No</option>
-                <option value="true">Sí</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary mt-2">Exportar Datos</button>
-          </form>
-        </div>
-      </div>
+      
     </div>
     <div class="col-md-6">
-      <div class="card">
-        <div class="card-body">
-          <h3>Editar usuario publicador</h3>
-          <p>Para modificar los datos del usuario publicador</p>
-          <a href="{% url 'editar_usuario' %}" class="btn btn-primary">
-            Editar usuario
-          </a>
-        </div>
-      </div>
+      
     </div>
   </div>
       

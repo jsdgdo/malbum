@@ -34,7 +34,7 @@
                                 <div class="card-body">
                                     <div class="content">{{ foto.content|safe }}</div>
                                     <p class="text-muted">{{ foto.published|date:"d/m/Y H:i" }}</p>
-                                    <p class="text-muted">Por <a href="{{ foto.actor_url }}">{{foto.actor_url}}</a></p>
+                                    <p class="text-muted">Por <a href="{{ foto.actor_url }}">{{foto.actor_username}}</a></p>
                                 </div>
                             {% endif %}
                         </div>
