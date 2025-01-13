@@ -35,6 +35,7 @@
                                     <div class="content">{{ foto.content|safe }}</div>
                                     <p class="text-muted">{{ foto.published|date:"d/m/Y H:i" }}</p>
                                     <p class="text-muted">Por <a href="{{ foto.actor_url }}">{{ foto.username }}</a></p>
+                                    <a href="{{ foto.remote_id }}" class="btn btn-primary" target="_blank">Ver Detalle</a>
                                 </div>
                             {% endif %}
                         </div>
