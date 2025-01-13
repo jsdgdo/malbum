@@ -110,11 +110,11 @@ def send_signed_request(url, data, method='POST'):
 
 def get_actor_url(username):
     domain = get_valor('dominio')
-    return f"https://{domain}/usuario/{username}"
+    return f"https://{domain}/ap/{username}"
 
 def get_foto_url(foto_id):
     domain = get_valor('dominio')
-    return f"https://{domain}/foto/{foto_id}"
+    return f"https://{domain}/ap/foto/{foto_id}"
 
 def actor_info(request, username):
     usuario = get_object_or_404(Usuario, username=username)
@@ -309,7 +309,7 @@ def outbox(request, username):
         attachment = {
             "type": "Image",  # Changed from Document to Image
             "mediaType": "image/jpeg",
-            "url": request.build_absolute_uri(foto.get_thumbnail_url()),
+            "url": request.build_absolute_uri(foto.get_original_url()),
             "name": foto.titulo
         }
         
