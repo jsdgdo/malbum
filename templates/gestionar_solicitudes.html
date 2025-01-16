@@ -43,16 +43,22 @@
                             <td>
                                 {% if solicitud.estado == 'pendiente' %}
                                     <form method="post" action="{% url 'responder_solicitud' solicitud.id %}" 
-                                          class="d-inline">
+                                          class="d-inline response-form">
                                         {% csrf_token %}
                                         <input type="hidden" name="respuesta" value="aprobar">
-                                        <button type="submit" class="btn btn-sm btn-success">Aprobar</button>
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                            <span class="button-text">Aprobar</span>
+                                        </button>
                                     </form>
                                     <form method="post" action="{% url 'responder_solicitud' solicitud.id %}" 
-                                          class="d-inline">
+                                          class="d-inline response-form">
                                         {% csrf_token %}
                                         <input type="hidden" name="respuesta" value="rechazar">
-                                        <button type="submit" class="btn btn-sm btn-danger">Rechazar</button>
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                            <span class="button-text">Rechazar</span>
+                                        </button>
                                     </form>
                                 {% endif %}
                             </td>
@@ -63,4 +69,30 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.response-form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const button = this.querySelector('button[type="submit"]');
+            const spinner = button.querySelector('.spinner-border');
+            const buttonText = button.querySelector('.button-text');
+            const isApprove = this.querySelector('input[name="respuesta"]').value === 'aprobar';
+            
+            button.disabled = true;
+            spinner.classList.remove('d-none');
+            buttonText.textContent = isApprove ? 'Aprobando...' : 'Rechazando...';
+            
+            // Disable other buttons in the row
+            const row = this.closest('tr');
+            row.querySelectorAll('button').forEach(btn => {
+                if (btn !== button) {
+                    btn.disabled = true;
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %} 

@@ -80,7 +80,7 @@
         </button>
         <div class="collapse mt-3" id="solicitudImagen">
             <div class="card card-body">
-                <form method="post" action="{% url 'solicitar_imagen' foto.id %}">
+                <form method="post" action="{% url 'solicitar_imagen' foto.id %}" id="requestForm">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
@@ -91,7 +91,10 @@
                         <textarea class="form-control" id="mensaje" name="mensaje" rows="3" 
                                 placeholder="Por favor, explique para qué utilizará la imagen..." required></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">Enviar solicitud</button>
+                    <button type="submit" class="btn btn-primary" id="submitButton">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <span class="button-text">Enviar solicitud</span>
+                    </button>
                 </form>
             </div>
         </div>
@@ -142,6 +145,20 @@
                 ? "Mostrar contenido" 
                 : "Ocultar contenido";
         });
+
+        // Add form submission handler
+        const requestForm = document.getElementById('requestForm');
+        if (requestForm) {
+            requestForm.addEventListener('submit', function() {
+                const button = this.querySelector('button[type="submit"]');
+                const spinner = button.querySelector('.spinner-border');
+                const buttonText = button.querySelector('.button-text');
+                
+                button.disabled = true;
+                spinner.classList.remove('d-none');
+                buttonText.textContent = 'Enviando...';
+            });
+        }
     });
 </script>
 <script src="{% static 'js/hide.js' %}"></script>

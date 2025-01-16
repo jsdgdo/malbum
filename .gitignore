@@ -9,3 +9,4 @@ certs/
 data/
 config/
 keys/
+.env

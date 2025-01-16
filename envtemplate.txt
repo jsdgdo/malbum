@@ -1,0 +1,2 @@
+EMAIL_HOST_USER='tu.email@gmail.com'
+EMAIL_HOST_PASSWORD='contraseña'
