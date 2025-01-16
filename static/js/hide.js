@@ -140,42 +140,88 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-function followUser(username, isLocal) {
+function followUser(username, domain, actorUrl) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const followBtn = document.querySelector(`[data-username="${username}"]`);
+    const button = document.querySelector(`button[data-action="follow"][onclick*="${username}"]`);
+    const spinner = button.querySelector('.spinner-border');
+    const buttonText = button.querySelector('.button-text');
     
-    if (!followBtn) {
-        console.error('Follow button not found');
-        return;
-    }
+    // Disable button and show spinner
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    buttonText.textContent = 'Siguiendo...';
     
-    fetch(`/usuario/follow/${username}/`, {
+    fetch(`/usuario/${username}@${domain}/follow/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': csrfToken,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+            'actor_url': actorUrl,
+            'remote_username': username,
+            'remote_domain': domain
+        })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update button text and state
-            if (followBtn.textContent.trim() === 'Seguir') {
-                followBtn.textContent = 'Dejar de seguir';
-                followBtn.classList.remove('btn-primary');
-                followBtn.classList.add('btn-secondary');
-            } else {
-                followBtn.textContent = 'Seguir';
-                followBtn.classList.remove('btn-secondary');
-                followBtn.classList.add('btn-primary');
-            }
+            location.reload();
         } else {
-            alert(data.error || 'Error al seguir/dejar de seguir al usuario');
+            // Reset button state
+            button.disabled = false;
+            spinner.classList.add('d-none');
+            buttonText.textContent = 'Seguir';
+            alert(data.error || 'Error al seguir al usuario');
         }
     })
     .catch(error => {
+        // Reset button state
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        buttonText.textContent = 'Seguir';
         console.error('Error:', error);
         alert('Error al procesar la solicitud');
     });
+}
+
+function unfollowUser(username, domain) {
+    if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const button = document.querySelector(`button[data-action="unfollow"][onclick*="${username}"]`);
+        const spinner = button.querySelector('.spinner-border');
+        const buttonText = button.querySelector('.button-text');
+        
+        // Disable button and show spinner
+        button.disabled = true;
+        spinner.classList.remove('d-none');
+        buttonText.textContent = 'Dejando de seguir...';
+        
+        fetch(`/usuario/${username}@${domain}/unfollow/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                // Reset button state
+                button.disabled = false;
+                spinner.classList.add('d-none');
+                buttonText.textContent = 'Dejar de seguir';
+                alert(data.error || 'Error al dejar de seguir al usuario');
+            }
+        })
+        .catch(error => {
+            // Reset button state
+            button.disabled = false;
+            spinner.classList.add('d-none');
+            buttonText.textContent = 'Dejar de seguir';
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
 }
