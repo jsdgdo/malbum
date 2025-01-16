@@ -43,7 +43,7 @@ body {
       text-decoration: underline;
     }
   }
-  p, label {
+  p, label, .content {
     color: var(--white);
   }
   .text-muted {

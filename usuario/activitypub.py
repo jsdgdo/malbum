@@ -399,7 +399,7 @@ def notify_followers_of_new_post(foto):
                 "attachment": [{
                     "type": "Image",
                     "mediaType": "image/jpeg",
-                    "url": f"https://{get_valor('dominio')}{foto.get_original_url()}",
+                    "url": f"https://{get_valor('dominio')}{foto.get_thumbnail_url()}",
                     "name": foto.titulo
                 }],
                 "to": ["https://www.w3.org/ns/activitystreams#Public"],
