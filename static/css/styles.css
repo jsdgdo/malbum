@@ -173,7 +173,15 @@ footer {
   width: 100%;
   height: auto;
 }
-
+.modal-dialog {
+  .modal-content {
+    background-color: var(--primary);
+    color: var(--white);
+  }
+  .btn-close {
+    background-color: var(--white);
+  }
+}
 .blurred img {
   filter: blur(10px);
   opacity: 0.5;
