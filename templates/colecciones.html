@@ -19,7 +19,7 @@
                             <a href="?coleccion_id={{ coleccion.id }}" 
                                class="list-group-item list-group-item-action {% if coleccion_actual.id == coleccion.id %}active{% endif %}">
                                 {{ coleccion.titulo }}
-                                <span class="badge bg-secondary float-end">{{ coleccion.fotos.count }}</span>
+                                <span class="badge bg-secondary float-end">{% if coleccion.fotos.count > 99 %}99+{% else %}{{ coleccion.fotos.count }}{% endif %}</span>
                             </a>
                         {% empty %}
                             <p class="text-muted">No hay colecciones creadas.</p>

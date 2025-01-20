@@ -1,5 +1,6 @@
 from django.contrib.syndication.views import Feed
 from django.urls import reverse
+from django.conf import settings
 import os
 from .models import Foto
 
@@ -15,7 +16,7 @@ class FotoFeed(Feed):
         return item.titulo
 
     def item_description(self, item):
-      description = f'<img src="http://localhost:8080{item.imagen.url}" alt="{item.alt_descripcion or "Imagen"}" style="max-width:100%;">'
+      description = f'<img src="{settings.SITE_URL}{item.imagen.url}" alt="{item.alt_descripcion or "Imagen"}" style="max-width:100%;">'
       description += f"""
       <p><strong>Descripción:</strong> {item.descripcion or 'Sin descripción'}</p>
       <p><strong>Licencia:</strong> {item.licencia or 'Sin licencia especificada'}</p>
