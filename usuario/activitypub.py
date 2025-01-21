@@ -119,14 +119,13 @@ def get_foto_url(foto_id):
 def actor_info(request, username):
     usuario = get_object_or_404(Usuario, username=username)
     actor_url = get_actor_url(username)
-    domain = get_valor('dominio')
     
     # Check if request is from a browser
     accept_header = request.headers.get('Accept', '')
     if 'text/html' in accept_header and 'application/activity+json' not in accept_header:
         return redirect('perfil_usuario', username=username)
     
-    response_data = {
+    response = JsonResponse({
         "@context": "https://www.w3.org/ns/activitystreams",
         "type": "Person",
         "id": actor_url,
@@ -142,17 +141,7 @@ def actor_info(request, username):
             "owner": actor_url,
             "publicKeyPem": get_valor('clave_activitypub', '')
         }
-    }
-
-    # Add avatar if available
-    if usuario.avatar:
-        response_data["icon"] = {
-            "type": "Image",
-            "mediaType": "image/jpeg",
-            "url": f"https://{domain}{usuario.avatar.url}"
-        }
-    
-    response = JsonResponse(response_data)
+    })
     
     # Set required headers
     response["Content-Type"] = "application/activity+json"
