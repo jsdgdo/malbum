@@ -46,6 +46,10 @@
                                             <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                                             <span class="button-text">Dejar de seguir</span>
                                         </button>
+                                    {% elif user.pending_follow %}
+                                        <button class="btn btn-sm btn-secondary" disabled>
+                                            <span class="button-text">Solicitud pendiente</span>
+                                        </button>
                                     {% else %}
                                         <button class="btn btn-sm btn-primary" 
                                                 onclick="followUser('{{ user.username }}', '{{ user.domain }}', '{{ user.actor_url }}')"

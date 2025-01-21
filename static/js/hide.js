@@ -163,16 +163,26 @@ function followUser(username, domain, actorUrl) {
             'remote_domain': domain
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            location.reload();
+            // Update button state to show pending if needed
+            if (data.pending) {
+                button.disabled = true;
+                spinner.classList.add('d-none');
+                buttonText.textContent = 'Solicitud pendiente';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-secondary');
+            } else {
+                location.reload();
+            }
         } else {
-            // Reset button state
-            button.disabled = false;
-            spinner.classList.add('d-none');
-            buttonText.textContent = 'Seguir';
-            alert(data.error || 'Error al seguir al usuario');
+            throw new Error(data.error || 'Error al seguir al usuario');
         }
     })
     .catch(error => {
@@ -181,47 +191,51 @@ function followUser(username, domain, actorUrl) {
         spinner.classList.add('d-none');
         buttonText.textContent = 'Seguir';
         console.error('Error:', error);
-        alert('Error al procesar la solicitud');
+        alert(error.message || 'Error al procesar la solicitud');
     });
 }
 
 function unfollowUser(username, domain) {
-    if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const button = document.querySelector(`button[data-action="unfollow"][onclick*="${username}"]`);
-        const spinner = button.querySelector('.spinner-border');
-        const buttonText = button.querySelector('.button-text');
-        
-        // Disable button and show spinner
-        button.disabled = true;
-        spinner.classList.remove('d-none');
-        buttonText.textContent = 'Dejando de seguir...';
-        
-        fetch(`/usuario/${username}@${domain}/unfollow/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                // Reset button state
-                button.disabled = false;
-                spinner.classList.add('d-none');
-                buttonText.textContent = 'Dejar de seguir';
-                alert(data.error || 'Error al dejar de seguir al usuario');
-            }
-        })
-        .catch(error => {
-            // Reset button state
-            button.disabled = false;
-            spinner.classList.add('d-none');
-            buttonText.textContent = 'Dejar de seguir';
-            console.error('Error:', error);
-            alert('Error al procesar la solicitud');
-        });
+    if (!confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
+        return;
     }
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const button = document.querySelector(`button[data-action="unfollow"][onclick*="${username}"]`);
+    const spinner = button.querySelector('.spinner-border');
+    const buttonText = button.querySelector('.button-text');
+    
+    // Disable button and show spinner
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    buttonText.textContent = 'Dejando de seguir...';
+    
+    fetch(`/usuario/${username}@${domain}/unfollow/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            throw new Error(data.error || 'Error al dejar de seguir al usuario');
+        }
+    })
+    .catch(error => {
+        // Reset button state
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        buttonText.textContent = 'Dejar de seguir';
+        console.error('Error:', error);
+        alert(error.message || 'Error al procesar la solicitud');
+    });
 }
