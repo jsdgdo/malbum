@@ -5,6 +5,7 @@
 {% block title %}Tablón de Fotos{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container mt-5">
     <h2 class="text-center mb-4">Tablón de Fotos</h2>
 
@@ -34,8 +35,13 @@
                                 <div class="card-body">
                                     <div class="content">{{ foto.content|safe }}</div>
                                     <p class="text-muted">{{ foto.published|date:"d/m/Y H:i" }}</p>
-                                    <p class="text-muted">Por <a href="{{ foto.actor_url }}">{{ foto.username }}</a></p>
+                                    <p class="text-muted">
+                                        Por <a href="{{ foto.actor_url }}">{{ foto.username }}</a>
+                                    </p>
                                     <a href="{{ foto.remote_id }}" class="btn btn-primary" target="_blank">Ver Detalle</a>
+                                    <button class="btn btn-outline-primary" onclick="unfollowRemoteUser('{{ foto.username }}', '{{ foto.domain }}', '{{ foto.actor_url }}')" title="Dejar de seguir">
+                                        Dejar de seguir
+                                    </button>
                                 </div>
                             {% endif %}
                         </div>
@@ -50,4 +56,35 @@
     </div>
 </div>
 <script src="{% static 'js/hide.js' %}"></script>
+
+<script>
+function unfollowRemoteUser(username, domain, actorUrl) {
+    if (!confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
+        return;
+    }
+
+    fetch(`/usuario/${username}@${domain}/unfollow/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'actor_url': actorUrl
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Error al dejar de seguir al usuario');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+    });
+}
+</script>
 {% endblock %}
