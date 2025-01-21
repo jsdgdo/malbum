@@ -68,12 +68,20 @@ def follow_user(request, username):
     if '@' in username:
         username, domain = username.split('@')
         
+        # Get the actor URL from the request data
+        try:
+            data = json.loads(request.body)
+            actor_url = data.get('actor_url')
+            if not actor_url:
+                return JsonResponse({'success': False, 'error': 'URL del actor no proporcionada'})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Datos de solicitud inválidos'})
+        
         # Don't allow following yourself
         local_domain = get_valor('domain')
         if domain == local_domain and username == request.user.username:
             return JsonResponse({'success': False, 'error': 'No puedes seguirte a ti mismo'})
-            
-        actor_url = f"https://{domain}/ap/{username}"
+        
         print(f"Following remote user at: {actor_url}")
         
         # Check if already following
@@ -91,7 +99,9 @@ def follow_user(request, username):
         # Create new follow
         follow = Follow.objects.create(
             follower=request.user,
-            actor_url=actor_url
+            actor_url=actor_url,
+            remote_username=username,
+            remote_domain=domain
         )
         print("New follow created")
         
@@ -317,10 +327,19 @@ def fetch_remote_posts(actor_url):
                     
                     # Look for image attachments
                     attachments = obj.get('attachment', [])
-                    image_urls = [
-                        att['url'] for att in attachments 
-                        if att.get('mediaType', '').startswith('image/')
-                    ]
+                    image_urls = []
+                    for att in attachments:
+                        if att.get('mediaType', '').startswith('image/'):
+                            # Prioritize thumbnail URLs
+                            if isinstance(att.get('url'), list):
+                                # Some servers provide multiple sizes
+                                thumbnails = [u for u in att['url'] if 'thumb' in str(u) or 'small' in str(u)]
+                                if thumbnails:
+                                    image_urls.append(thumbnails[0])
+                                else:
+                                    image_urls.append(att['url'][0])
+                            else:
+                                image_urls.append(att['url'])
                     
                     if image_urls:  # Only process posts with images
                         post = {
