@@ -4,14 +4,23 @@ from django.conf import settings
 import os
 from .models import Foto
 from .config import get_valor
+from usuario.models import Usuario
 
 class FotoFeed(Feed):
-    title = "Malbum - Fotos"
-    link = "/tablon/"
-    description = "Últimas fotos subidas a Malbum"
+    def title(self):
+        user = Usuario.objects.first()
+        return f"Malbum - Fotos de {user.nombreCompleto or user.username}"
+
+    def link(self):
+        user = Usuario.objects.first()
+        return reverse('perfil_usuario', args=[user.username])
+
+    def description(self):
+        user = Usuario.objects.first()
+        return f"Últimas fotos subidas por {user.nombreCompleto or user.username} en Malbum"
 
     def items(self):
-        return Foto.objects.order_by('-fecha_subida')[:10]  # Customize the number of items
+        return Foto.objects.order_by('-fecha_subida')[:10]
 
     def item_title(self, item):
         return item.titulo
