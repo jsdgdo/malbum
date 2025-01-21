@@ -125,7 +125,7 @@ def actor_info(request, username):
     if 'text/html' in accept_header and 'application/activity+json' not in accept_header:
         return redirect('perfil_usuario', username=username)
     
-    response = JsonResponse({
+    response_data = {
         "@context": "https://www.w3.org/ns/activitystreams",
         "type": "Person",
         "id": actor_url,
@@ -141,7 +141,18 @@ def actor_info(request, username):
             "owner": actor_url,
             "publicKeyPem": get_valor('clave_activitypub', '')
         }
-    })
+    }
+
+    # Add avatar if available
+    if usuario.fotoDePerfil:
+        domain = get_valor('dominio')
+        response_data["icon"] = {
+            "type": "Image",
+            "mediaType": "image/jpeg",
+            "url": f"https://{domain}{usuario.fotoDePerfil.url}"
+        }
+    
+    response = JsonResponse(response_data)
     
     # Set required headers
     response["Content-Type"] = "application/activity+json"
