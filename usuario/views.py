@@ -63,6 +63,7 @@ def perfil_usuario(request, username):
 @require_POST
 def follow_user(request, username):
     print(f"\nFollowing user: {username}")
+    print(f"Request body: {request.body}")  # Debug line
     try:
         # Parse username and domain
         if '@' in username:
@@ -146,15 +147,24 @@ def follow_user(request, username):
 @login_required
 @require_POST
 def unfollow_user(request, username):
+    print(f"\nUnfollowing user: {username}")
+    print(f"Request body: {request.body}")  # Debug line
     if '@' in username:
         # Handle remote user
         username, domain = username.split('@', 1)
-        actor_url = f"https://{domain}/ap/{username}"
-        Follow.objects.filter(
-            follower=request.user,
-            following__isnull=True,
-            actor_url=actor_url
-        ).delete()
+        try:
+            data = json.loads(request.body)
+            actor_url = data.get('actor_url')
+            if not actor_url:
+                return JsonResponse({'success': False, 'error': 'URL del actor no proporcionada'})
+                
+            Follow.objects.filter(
+                follower=request.user,
+                following__isnull=True,
+                actor_url=actor_url
+            ).delete()
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Datos de solicitud inválidos'})
     else:
         # Handle local user
         user_to_unfollow = get_object_or_404(Usuario, username=username)

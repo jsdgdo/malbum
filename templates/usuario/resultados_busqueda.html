@@ -41,7 +41,7 @@
                                     </a>
                                     {% if user.is_followed %}
                                         <button class="btn btn-sm btn-danger" 
-                                                onclick="unfollowUser('{{ user.username }}', '{{ user.domain }}')"
+                                                onclick="unfollowUser('{{ user.username }}', '{{ user.domain }}', '{{ user.actor_url }}')"
                                                 data-action="unfollow">
                                             <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                                             <span class="button-text">Dejar de seguir</span>
@@ -98,13 +98,17 @@ function followUser(username, domain, actorUrl) {
     });
 }
 
-function unfollowUser(username, domain) {
+function unfollowUser(username, domain, actorUrl) {
     if (confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
         fetch(`/usuario/${username}@${domain}/unfollow/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'actor_url': actorUrl
+            })
         })
         .then(response => response.json())
         .then(data => {

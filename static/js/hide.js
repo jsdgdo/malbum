@@ -195,7 +195,7 @@ function followUser(username, domain, actorUrl) {
     });
 }
 
-function unfollowUser(username, domain) {
+function unfollowUser(username, domain, actorUrl) {
     if (!confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
         return;
     }
@@ -215,7 +215,10 @@ function unfollowUser(username, domain) {
         headers: {
             'X-CSRFToken': csrfToken,
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+            'actor_url': actorUrl
+        })
     })
     .then(response => {
         if (!response.ok) {
