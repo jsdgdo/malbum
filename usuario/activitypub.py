@@ -146,14 +146,11 @@ def actor_info(request, username):
 
     # Add avatar if available
     if usuario.avatar:
-        avatar_url = f"https://{domain}{usuario.avatar.url}"
         response_data["icon"] = {
             "type": "Image",
             "mediaType": "image/jpeg",
-            "url": avatar_url
+            "url": f"https://{domain}{usuario.avatar.url}"
         }
-        # Add avatar_url field for compatibility
-        response_data["avatar"] = avatar_url
     
     response = JsonResponse(response_data)
     
