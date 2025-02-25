@@ -16,6 +16,8 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from urllib.parse import urlparse
 import time
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 
 def load_private_key():
     try:
@@ -241,7 +243,23 @@ def inbox(request, username):
         activity = json.loads(request.body)
         print(f"Received activity: {activity}")
         
-        if activity['type'] == 'Undo':
+        if activity['type'] == 'Delete':
+            # Handle Delete activity
+            deleted_object = activity.get('object', {})
+            if isinstance(deleted_object, str):
+                # If object is just an ID string
+                object_id = deleted_object
+            else:
+                # If object is a full object
+                object_id = deleted_object.get('id')
+            
+            if object_id:
+                from usuario.models import RemotePost
+                # Delete the post if it exists in our database
+                RemotePost.objects.filter(remote_id=object_id).delete()
+                return HttpResponse(status=200)
+        
+        elif activity['type'] == 'Undo':
             # Handle Undo Follow
             if activity['object']['type'] == 'Follow':
                 follower_url = activity['actor']
@@ -300,7 +318,7 @@ def inbox(request, username):
                         print(f"Accept response content: {r.content}")
                     
     except Exception as e:
-        print(f"Error processing follow: {e}")
+        print(f"Error processing activity: {e}")
         import traceback
         traceback.print_exc()
         return HttpResponse(status=500)
@@ -753,15 +771,34 @@ def sync_remote_posts():
     from usuario.models import Follow, RemotePost
     
     follows = Follow.objects.filter(following__isnull=True).exclude(actor_url='')
+    
+    # Keep track of all valid remote_ids we find during sync
+    valid_remote_ids = set()
+    
     for follow in follows:
         posts = fetch_remote_posts(follow.actor_url)
         for post_data in posts:
+            remote_id = post_data['remote_id']
+            valid_remote_ids.add(remote_id)
+            
             RemotePost.objects.get_or_create(
-                remote_id=post_data['remote_id'],
+                remote_id=remote_id,
                 defaults={
                     'actor_url': post_data['actor_url'],
                     'content': post_data['content'],
                     'image_url': post_data['image_url'],
                     'published': post_data['published']
                 }
-            ) 
+            )
+    
+    # Clean up posts that no longer exist on remote instances
+    # Only clean up posts that are older than 1 hour to avoid race conditions
+    cleanup_threshold = timezone.now() - timedelta(hours=1)
+    
+    # Get all remote posts for these follows that weren't found in the sync
+    RemotePost.objects.filter(
+        actor_url__in=[follow.actor_url for follow in follows],
+        created_at__lt=cleanup_threshold
+    ).exclude(
+        remote_id__in=valid_remote_ids
+    ).delete() 
