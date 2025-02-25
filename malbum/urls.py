@@ -36,6 +36,7 @@ urlpatterns = [
     path('splash/', views.splash, name='splash'),
     path('foto/<int:id>/', views.detalle_foto, name='detalle_foto'),
     path('foto/<int:id>/editar/', views.editar_foto, name='editar_foto'),
+    path('foto/<int:id>/borrar/', views.borrar_foto, name='borrar_foto'),
     path("rss/", FotoFeed(), name="rss_feed"),
     path('control/', control, name='control'),
     path('importar-datos/', importar_datos, name='importar_datos'),

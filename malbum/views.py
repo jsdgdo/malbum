@@ -284,6 +284,25 @@ def editar_foto(request, id):
     form = FotoForm(instance=foto)
   return render(request, 'subir_foto.html', {'form': form, 'foto': foto})
 
+@login_required
+@require_POST
+def borrar_foto(request, id):
+    foto = get_object_or_404(Foto, id=id, usuario=request.user)
+    
+    # Delete the actual image file
+    if foto.imagen:
+        try:
+            # Delete original and all resized versions
+            foto.imagen.delete(save=False)
+        except Exception as e:
+            print(f"Error deleting image file: {e}")
+    
+    # Delete the database record
+    foto.delete()
+    
+    messages.success(request, 'La foto ha sido eliminada correctamente.')
+    return redirect('tablon')
+
 def handle_import_data(request):
     if request.method == 'POST' and request.FILES.get('data_file'):
         try:
