@@ -16,6 +16,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Questrial&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1050;
+      }
+    </style>
   </head>
   <body>
     <nav class="navbar navbar-expand-lg">
@@ -37,35 +45,49 @@
       </div>
     </nav>
 
+    <!-- Toast Container -->
+    <div class="toast-container">
+      {% if form.errors %}
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="d-flex">
+                <div class="toast-body">
+                  {% if field != '__all__' %}
+                    <strong>{{ field|title }}:</strong>
+                  {% endif %}
+                  {{ error }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+            </div>
+          {% endfor %}
+        {% endfor %}
+      {% endif %}
+    </div>
+
     <div class="container mt-4 mb-5 col-md-8" style="height: 100vh;">
         {% load widget_tweaks %} 
         <div class="container">
             <h2 class="text-center mb-4">Iniciar Sesión</h2>
         
-            <form method="post" class="needs-validation" novalidate>
+            <form method="post" class="needs-validation" novalidate id="loginForm">
                 {% csrf_token %}
                 
-                <div class="form-group  {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
+                <div class="form-group mb-4">
                     <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
                     {{ form.username|add_class:"form-control" }}
-                    {% if form.username.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.username.errors|join:", " }}
-                        </div>
-                    {% endif %}
                 </div>
         
-                <div class="form-group mb-4 {% if form.nombreCompleto.errors %}has-error has-feedback{% endif %}">
+                <div class="form-group mb-4">
                     <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
                     {{ form.password|add_class:"form-control" }}
-                    {% if form.password.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.password.errors|join:", " }}
-                        </div>
-                    {% endif %}
                 </div>
         
-                <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                <button type="submit" class="btn btn-primary w-100" id="submitButton">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="loadingSpinner"></span>
+                    <span id="buttonText">Iniciar Sesión</span>
+                </button>
             </form>
             <p class="mt-3 text-center">
               ¿Olvidaste tu contraseña? <a href="{% url 'password_reset' %}">Recuperar contraseña</a>.
@@ -88,5 +110,31 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
+    <script>
+      // Initialize all toasts
+      document.addEventListener('DOMContentLoaded', function() {
+        var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+        var toastList = toastElList.map(function(toastEl) {
+          return new bootstrap.Toast(toastEl, {
+            autohide: true,
+            delay: 5000
+          });
+        });
+        // Show all toasts
+        toastList.forEach(toast => toast.show());
+
+        // Handle form submission
+        const loginForm = document.getElementById('loginForm');
+        const button = document.getElementById('submitButton');
+        const spinner = document.getElementById('loadingSpinner');
+        const text = document.getElementById('buttonText');
+
+        loginForm.addEventListener('submit', function() {
+            button.disabled = true;
+            spinner.classList.remove('d-none');
+            text.textContent = 'Iniciando sesión...';
+        });
+      });
+    </script>
   </body>
 </html>

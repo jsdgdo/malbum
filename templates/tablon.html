@@ -12,9 +12,11 @@
       <h2 style="margin-bottom: 0px;">Tablón de fotos</h2>
       <div class="d-flex align-items-center">
         <small class="text-muted me-3">Última actualización: {{ last_refresh|date:"H:i" }}</small>
-        <a href="?refresh=1" class="btn btn-outline-primary btn-sm">
-          <i class="bi bi-arrow-clockwise"></i> Actualizar
-        </a>
+        <button id="refreshButton" onclick="refreshTablon()" class="btn btn-primary btn-sm">
+          <span id="refreshIcon" class="bi bi-arrow-clockwise"></span>
+          <span id="refreshSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+          <span id="refreshText">Actualizar</span>
+        </button>
       </div>
     </div>
 
@@ -67,6 +69,22 @@
 <script src="{% static 'js/hide.js' %}"></script>
 
 <script>
+function refreshTablon() {
+    const button = document.getElementById('refreshButton');
+    const spinner = document.getElementById('refreshSpinner');
+    const icon = document.getElementById('refreshIcon');
+    const text = document.getElementById('refreshText');
+
+    // Disable button and show spinner
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    icon.classList.add('d-none');
+    text.textContent = 'Actualizando...';
+
+    // Redirect with refresh parameter
+    window.location.href = '?refresh=1';
+}
+
 function unfollowRemoteUser(username, domain, actorUrl) {
     if (!confirm('¿Estás seguro de que quieres dejar de seguir a este usuario?')) {
         return;

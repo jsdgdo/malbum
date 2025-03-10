@@ -527,7 +527,7 @@ def following(request, username):
     response["Content-Type"] = "application/activity+json"
     response["Access-Control-Allow-Origin"] = "*"
     
-    return response 
+    return response
 
 def discover_instances():
     """Discover ActivityPub instances from various sources"""
@@ -674,13 +674,13 @@ def find_user_on_instance(username, domain):
     except Exception as e:
         print(f"Error in WebFinger request: {e}")
     
-    return None 
+    return None
 
 def send_follow_activity(user, target_actor_url):
     """Send a Follow activity to a remote user"""
     # This is a placeholder - implement actual ActivityPub follow protocol here
     print(f"Would send Follow activity from {user} to {target_actor_url}")
-    pass  # For now, just pass since we haven't implemented ActivityPub protocol yet 
+    pass  # For now, just pass since we haven't implemented ActivityPub protocol yet
 
 def fetch_remote_posts(actor_url):
     """Fetch posts from a remote user's outbox"""
@@ -778,27 +778,36 @@ def sync_remote_posts():
     for follow in follows:
         posts = fetch_remote_posts(follow.actor_url)
         for post_data in posts:
-            remote_id = post_data['remote_id']
-            valid_remote_ids.add(remote_id)
-            
-            RemotePost.objects.get_or_create(
-                remote_id=remote_id,
-                defaults={
-                    'actor_url': post_data['actor_url'],
-                    'content': post_data['content'],
-                    'image_url': post_data['image_url'],
-                    'published': post_data['published']
-                }
-            )
+            try:
+                # Verify the post and its image still exist
+                post_response = requests.head(post_data['remote_id'], headers={'Accept': 'application/activity+json'}, timeout=10)
+                image_response = requests.head(post_data['image_url'], timeout=10)
+                
+                if post_response.status_code == 200 and image_response.status_code == 200:
+                    remote_id = post_data['remote_id']
+                    valid_remote_ids.add(remote_id)
+                    
+                    RemotePost.objects.get_or_create(
+                        remote_id=remote_id,
+                        defaults={
+                            'actor_url': post_data['actor_url'],
+                            'content': post_data['content'],
+                            'image_url': post_data['image_url'],
+                            'published': post_data['published']
+                        }
+                    )
+                else:
+                    print(f"Post or image no longer accessible: {post_data['remote_id']}")
+            except Exception as e:
+                print(f"Error verifying post {post_data['remote_id']}: {e}")
+                continue
     
-    # Clean up posts that no longer exist on remote instances
-    # Only clean up posts that are older than 1 hour to avoid race conditions
-    cleanup_threshold = timezone.now() - timedelta(hours=1)
-    
-    # Get all remote posts for these follows that weren't found in the sync
+    # Remove any posts that weren't found in the sync
+    # No time threshold - if it's not in valid_remote_ids, it's gone
     RemotePost.objects.filter(
-        actor_url__in=[follow.actor_url for follow in follows],
-        created_at__lt=cleanup_threshold
+        actor_url__in=[follow.actor_url for follow in follows]
     ).exclude(
         remote_id__in=valid_remote_ids
-    ).delete() 
+    ).delete()
+    
+    print(f"Sync complete. Valid posts: {len(valid_remote_ids)}") 
