@@ -11,7 +11,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 style="margin-bottom: 0px;">Tablón de fotos</h2>
       <div class="d-flex align-items-center">
-        <small class="text-muted me-3">Última actualización: {{ last_refresh|date:"H:i" }}</small>
+        <small class="text-muted me-3">Última actualización: <span id="lastUpdateTime"></span></small>
         <button id="refreshButton" onclick="refreshTablon()" class="btn btn-primary btn-sm">
           <span id="refreshIcon" class="bi bi-arrow-clockwise"></span>
           <span id="refreshSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
@@ -69,6 +69,17 @@
 <script src="{% static 'js/hide.js' %}"></script>
 
 <script>
+function formatLastUpdateTime(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Update the last refresh time in local timezone
+    const lastRefreshTime = "{{ last_refresh|date:'c' }}";
+    document.getElementById('lastUpdateTime').textContent = formatLastUpdateTime(lastRefreshTime);
+});
+
 function refreshTablon() {
     const button = document.getElementById('refreshButton');
     const spinner = document.getElementById('refreshSpinner');
