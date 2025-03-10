@@ -340,115 +340,151 @@ def handle_import_data(request):
 
             if zipfile.is_zipfile(data_file):
                 print("Detected a ZIP file")
-                with zipfile.ZipFile(data_file) as z:
-                    # Look for config.json in the ZIP
-                    config_filename = next((name for name in z.namelist() if name.endswith('config.json')), None)
-                    if config_filename:
-                        with z.open(config_filename) as config_file:
-                            config_content = config_file.read().decode('utf-8')
-                            save_config(json.loads(config_content))
-                    
-                    # Look for the data JSON file
-                    json_filename = next((name for name in z.namelist() if name.endswith('.json') and name != 'config.json'), None)
-                    if not json_filename:
-                        raise ValueError("El archivo ZIP no contiene un archivo JSON válido.")
+                try:
+                    with zipfile.ZipFile(data_file) as z:
+                        # Look for config.json in the ZIP
+                        config_filename = next((name for name in z.namelist() if name.endswith('config.json')), None)
+                        if config_filename:
+                            with z.open(config_filename) as config_file:
+                                config_content = config_file.read().decode('utf-8')
+                                save_config(json.loads(config_content))
+                        
+                        # Look for the data JSON file
+                        json_filename = next((name for name in z.namelist() if name.endswith('.json') and name != 'config.json'), None)
+                        if not json_filename:
+                            raise ValueError("El archivo ZIP no contiene un archivo JSON válido.")
 
-                    print(f"Found JSON file in ZIP: {json_filename}")
-                    with z.open(json_filename) as json_file:
-                        json_content = json_file.read().decode('utf-8')
-                        data = json.loads(json_content)
+                        print(f"Found JSON file in ZIP: {json_filename}")
+                        with z.open(json_filename) as json_file:
+                            json_content = json_file.read().decode('utf-8')
+                            data = json.loads(json_content)
 
-                    for file_name in z.namelist():
-                        if file_name.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                            print(f"Extracting image: {file_name}")
-                            with z.open(file_name) as img_file:
-                                img_path = os.path.join('fotos', os.path.basename(file_name))
-                                default_storage.save(img_path, img_file)
+                        for file_name in z.namelist():
+                            if file_name.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                                print(f"Extracting image: {file_name}")
+                                with z.open(file_name) as img_file:
+                                    img_path = os.path.join('fotos', os.path.basename(file_name))
+                                    default_storage.save(img_path, img_file)
+                except zipfile.BadZipFile:
+                    raise ValueError("El archivo ZIP está corrupto o no es válido.")
+                except json.JSONDecodeError:
+                    raise ValueError("El archivo JSON dentro del ZIP no es válido.")
             else:
                 logging.warning("Processing plain JSON file")
-                data_file.seek(0)
-                json_content = data_file.read().decode('utf-8').strip()
-                logging.warning(f"First 200 characters of JSON content: {json_content[:200]}")
+                try:
+                    data_file.seek(0)
+                    json_content = data_file.read().decode('utf-8').strip()
+                    logging.warning(f"First 200 characters of JSON content: {json_content[:200]}")
 
-                if not json_content:
-                    raise ValueError("El archivo JSON está vacío.")
+                    if not json_content:
+                        raise ValueError("El archivo JSON está vacío.")
 
-                data = json.loads(json_content)
+                    data = json.loads(json_content)
+                except json.JSONDecodeError:
+                    raise ValueError("El archivo JSON no es válido. Verifica su formato.")
+                except UnicodeDecodeError:
+                    raise ValueError("El archivo no está codificado correctamente. Debe ser UTF-8.")
 
             # Process the imported data
-            Foto.objects.all().delete()
-            Etiqueta.objects.all().delete()
-            Coleccion.objects.all().delete()
-            Usuario.objects.all().delete()
+            try:
+                # Start with a clean slate
+                print("Cleaning existing data...")
+                Foto.objects.all().delete()
+                Etiqueta.objects.all().delete()
+                Coleccion.objects.all().delete()
+                Usuario.objects.all().delete()
 
-            user_id_map = {}
+                user_id_map = {}
 
-            for user_data in data.get('usuarios', []):
-                print(f"Importing user: {user_data['username']}")
-                old_id = user_data.get('id')
-                user = Usuario(
-                    username=user_data['username'],
-                    email=user_data['email'],
-                    is_staff=user_data['is_staff'],
-                    is_active=user_data['is_active'],
-                    is_superuser=user_data['is_superuser'],
-                    date_joined=user_data['date_joined'],
-                    nombreCompleto=user_data.get('nombreCompleto', ''),
-                    bio=user_data.get('bio', '')
-                )
-                user.password = user_data['password']
-                user.save()
-                if old_id:
-                    user_id_map[old_id] = user.id
+                # Import users
+                print("Importing users...")
+                for user_data in data.get('usuarios', []):
+                    print(f"Importing user: {user_data['username']}")
+                    old_id = user_data.get('id')
+                    try:
+                        user = Usuario(
+                            username=user_data['username'],
+                            email=user_data['email'],
+                            is_staff=user_data.get('is_staff', False),
+                            is_active=user_data.get('is_active', True),
+                            is_superuser=user_data.get('is_superuser', False),
+                            date_joined=user_data.get('date_joined', timezone.now()),
+                            nombreCompleto=user_data.get('nombreCompleto', ''),
+                            bio=user_data.get('bio', '')
+                        )
+                        user.password = user_data.get('password', '')
+                        user.save()
+                        if old_id:
+                            user_id_map[old_id] = user.id
+                    except Exception as e:
+                        raise ValueError(f"Error importando usuario {user_data.get('username')}: {str(e)}")
 
-            for etiqueta_data in data.get('etiquetas', []):
-                print(f"Importing etiqueta: {etiqueta_data['nombre']}")
-                Etiqueta.objects.create(nombre=etiqueta_data['nombre'])
+                # Import tags
+                print("Importing tags...")
+                for etiqueta_data in data.get('etiquetas', []):
+                    try:
+                        Etiqueta.objects.create(nombre=etiqueta_data['nombre'])
+                    except Exception as e:
+                        print(f"Error importing tag {etiqueta_data.get('nombre')}: {str(e)}")
 
-            for coleccion_data in data.get('colecciones', []):
-                print(f"Importing coleccion: {coleccion_data['titulo']}")
-                old_user_id = coleccion_data['usuario_id']
-                new_user_id = user_id_map.get(old_user_id)
-                if new_user_id:
-                    usuario = Usuario.objects.get(id=new_user_id)
-                    Coleccion.objects.create(
-                        titulo=coleccion_data['titulo'],
-                        descripcion=coleccion_data['descripcion'],
-                        usuario=usuario
-                    )
+                # Import collections
+                print("Importing collections...")
+                for coleccion_data in data.get('colecciones', []):
+                    old_user_id = coleccion_data.get('usuario_id')
+                    new_user_id = user_id_map.get(old_user_id)
+                    if new_user_id:
+                        try:
+                            usuario = Usuario.objects.get(id=new_user_id)
+                            Coleccion.objects.create(
+                                titulo=coleccion_data['titulo'],
+                                descripcion=coleccion_data.get('descripcion', ''),
+                                usuario=usuario
+                            )
+                        except Exception as e:
+                            print(f"Error importing collection {coleccion_data.get('titulo')}: {str(e)}")
 
-            for foto_data in data.get('fotos', []):
-                print(f"Importing foto: {foto_data['titulo']}")
-                old_user_id = foto_data['usuario_id']
-                new_user_id = user_id_map.get(old_user_id)
-                if new_user_id:
-                    usuario = Usuario.objects.get(id=new_user_id)
-                    Foto.objects.create(
-                        titulo=foto_data['titulo'],
-                        descripcion=foto_data['descripcion'],
-                        alt_descripcion=foto_data['alt_descripcion'],
-                        licencia=foto_data['licencia'],
-                        advertencia_contenido=foto_data['advertencia_contenido'],
-                        camara=foto_data['camara'],
-                        lente=foto_data['lente'],
-                        configuracion=foto_data['configuracion'],
-                        usuario=usuario,
-                        imagen=f"fotos/{os.path.basename(foto_data.get('imagen', ''))}"
-                    )
+                # Import photos
+                print("Importing photos...")
+                for foto_data in data.get('fotos', []):
+                    old_user_id = foto_data.get('usuario_id')
+                    new_user_id = user_id_map.get(old_user_id)
+                    if new_user_id:
+                        try:
+                            usuario = Usuario.objects.get(id=new_user_id)
+                            Foto.objects.create(
+                                titulo=foto_data['titulo'],
+                                descripcion=foto_data.get('descripcion', ''),
+                                alt_descripcion=foto_data.get('alt_descripcion', ''),
+                                licencia=foto_data.get('licencia', ''),
+                                advertencia_contenido=foto_data.get('advertencia_contenido', False),
+                                camara=foto_data.get('camara', ''),
+                                lente=foto_data.get('lente', ''),
+                                configuracion=foto_data.get('configuracion', ''),
+                                usuario=usuario,
+                                imagen=f"fotos/{os.path.basename(foto_data.get('imagen', ''))}"
+                            )
+                        except Exception as e:
+                            print(f"Error importing photo {foto_data.get('titulo')}: {str(e)}")
 
-            # If no config.json was found or imported, ensure we have defaults
-            if not get_valor('dominio'):
-                initial_config = get_default_config()
-                initial_config['dominio'] = request.get_host()
-                save_config(initial_config)
+                # If no config.json was found or imported, ensure we have defaults
+                if not get_valor('dominio'):
+                    initial_config = get_default_config()
+                    initial_config['dominio'] = request.get_host()
+                    save_config(initial_config)
 
-            return True, 'Datos importados exitosamente.'
+                return True, 'Datos importados exitosamente.'
+                
+            except Exception as e:
+                print(f"Error during data import: {e}")
+                raise ValueError(f"Error durante la importación de datos: {str(e)}")
             
         except Exception as e:
             print(f"Error during import: {e}")
+            import traceback
+            traceback.print_exc()
             return False, str(e)
 
-    return False, 'Solicitud inválida.'
+    return False, 'No se ha proporcionado un archivo para importar.'
 
 @login_required
 def control(request):

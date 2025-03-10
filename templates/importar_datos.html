@@ -74,11 +74,21 @@ document.getElementById('importForm').addEventListener('submit', function(e) {
         body: formData,
         credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.message || 'Error en el servidor');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            // Redirect to login with success message
-            window.location.href = '/usuario/iniciar-sesion/?message=Datos importados correctamente&type=success';
+            // Show success message and redirect
+            showToast('Datos importados correctamente');
+            setTimeout(() => {
+                window.location.href = '/usuario/iniciar-sesion/?message=Datos importados correctamente&type=success';
+            }, 1000);
         } else {
             showToast(data.message || 'Error al importar los datos', 'danger');
             // Re-enable the button
@@ -89,7 +99,7 @@ document.getElementById('importForm').addEventListener('submit', function(e) {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Error al procesar la solicitud', 'danger');
+        showToast(error.message || 'Error al procesar la solicitud', 'danger');
         // Re-enable the button
         button.disabled = false;
         spinner.classList.add('d-none');
