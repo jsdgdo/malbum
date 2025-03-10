@@ -2,34 +2,102 @@
 {% block title %}Importar Datos{% endblock %}
 
 {% block content %}
+<style>
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+  }
+</style>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
+
 <div class="container mt-5 mb-5 col-md-8">
   <h3>Importar Datos</h3>
   <form method="post" enctype="multipart/form-data" id="importForm">
     {% csrf_token %}
     <div class="form-group mb-4">
       <label for="data_file">Seleccionar archivo JSON o ZIP</label>
-      <input type="file" id="data_file" name="data_file" class="form-control">
+      <input type="file" id="data_file" name="data_file" class="form-control" required>
     </div>
     <input type="hidden" name="import_data" value="1">
     <button type="submit" class="btn btn-primary mt-2" id="importButton">
       <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-      Importar Datos
+      <span id="buttonText">Importar Datos</span>
     </button>
   </form>
 </div>
 
 <script>
+function showToast(message, type = 'success') {
+    const toastContainer = document.querySelector('.toast-container');
+    const toastHtml = `
+        <div class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    const toastElement = toastContainer.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+    toast.show();
+}
+
 document.getElementById('importForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
     const button = document.getElementById('importButton');
     const spinner = button.querySelector('.spinner-border');
+    const buttonText = document.getElementById('buttonText');
+    const formData = new FormData(this);
+    
+    // Validate file input
+    const fileInput = document.getElementById('data_file');
+    if (!fileInput.files.length) {
+        showToast('Por favor selecciona un archivo para importar', 'danger');
+        return;
+    }
     
     // Disable button and show spinner
     button.disabled = true;
     spinner.classList.remove('d-none');
-    button.innerHTML = `
-        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        Importando...
-    `;
+    buttonText.textContent = 'Importando...';
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Datos importados correctamente');
+            // Redirect after successful import
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        } else {
+            showToast(data.message || 'Error al importar los datos', 'danger');
+            // Re-enable the button
+            button.disabled = false;
+            spinner.classList.add('d-none');
+            buttonText.textContent = 'Importar Datos';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error al procesar la solicitud', 'danger');
+        // Re-enable the button
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        buttonText.textContent = 'Importar Datos';
+    });
 });
 </script>
 {% endblock %}
