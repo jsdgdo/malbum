@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-1)#c16_7jxnzm^(ome1i8hu-fd)p-y0vr4!^)m$hf0g0!6z9uj'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['malbum.org', 'localhost', '127.0.0.1', '*']
 
@@ -168,7 +168,7 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')  # Your Gmail address
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')  # Your app password
 DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', '')  # Will use the same Gmail address
 
-DOMAIN = 'malbum.org'
+DOMAIN = os.environ.get('DOMAIN', 'malbum.org')  # Get domain from environment variables with fallback
 
 INSTANCES_SOCIAL_TOKEN = None  # Optional: Get a token from instances.social
 

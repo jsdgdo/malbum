@@ -26,6 +26,8 @@ from .config import get_valor, set_valor, get_default_config, save_config, load_
 from usuario.activitypub import notify_followers_of_new_post
 from itertools import chain
 import requests
+from django.core.cache import cache
+from datetime import timedelta
 
 def fetch_remote_posts(actor_url):
     """Fetch posts from a remote user's outbox"""
@@ -71,51 +73,67 @@ def fetch_remote_posts(actor_url):
             
         outbox_data = response.json()
         
-        # Get the first page if this is a collection
-        if outbox_data.get('type') == 'OrderedCollection':
-            first_page_url = outbox_data.get('first')
-            if first_page_url:
-                print("Getting first page of outbox")
-                response = requests.get(first_page_url, headers=headers)
-                print(f"First page response status: {response.status_code}")
-                if response.status_code == 200:
-                    outbox_data = response.json()
-        
-        # Process the items
-        items = outbox_data.get('orderedItems', [])
-        print(f"Found {len(items)} items")
-        
         posts = []
-        for item in items:
-            try:
-                # Only process Create activities with Note objects
-                if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Note':
-                    obj = item['object']
-                    
-                    # Look for image attachments
-                    attachments = obj.get('attachment', [])
-                    image_urls = [
-                        att['url'] for att in attachments 
-                        if att.get('mediaType', '').startswith('image/')
-                    ]
-                    
-                    if image_urls:  # Only process posts with images
-                        post = {
-                            'remote_id': obj['id'],
-                            'actor_url': item['actor'],
-                            'content': obj.get('content', ''),
-                            'image_url': image_urls[0],  # Use first image
-                            'published': obj.get('published')
-                        }
-                        print(f"Found post: {post}")
-                        posts.append(post)
+        pages_to_fetch = 5  # Fetch up to 5 pages
+        current_page = 0
+        next_page_url = None
+
+        if outbox_data.get('type') == 'OrderedCollection':
+            next_page_url = outbox_data.get('first')
+        else:
+            # If it's already a page, process it
+            next_page_url = outbox_url
+
+        while next_page_url and current_page < pages_to_fetch:
+            print(f"\nFetching page {current_page + 1} from {next_page_url}")
+            response = requests.get(next_page_url, headers=headers)
+            
+            if response.status_code != 200:
+                print(f"Error getting page: {response.status_code}")
+                break
+                
+            page_data = response.json()
+            items = page_data.get('orderedItems', [])
+            print(f"Found {len(items)} items on this page")
+            
+            for item in items:
+                try:
+                    # Only process Create activities with Note objects
+                    if item.get('type') == 'Create' and item.get('object', {}).get('type') == 'Note':
+                        obj = item['object']
+                        
+                        # Look for image attachments
+                        attachments = obj.get('attachment', [])
+                        image_urls = [
+                            att['url'] for att in attachments 
+                            if att.get('mediaType', '').startswith('image/')
+                        ]
+                        
+                        if image_urls:  # Only process posts with images
+                            post = {
+                                'remote_id': obj['id'],
+                                'actor_url': item['actor'],
+                                'content': obj.get('content', ''),
+                                'image_url': image_urls[0],  # Use first image
+                                'published': obj.get('published')
+                            }
+                            print(f"Found post: {post}")
+                            posts.append(post)
+                        else:
+                            print(f"No images found in post {obj['id']}")
                     else:
-                        print(f"No images found in post {obj['id']}")
-                else:
-                    print(f"Skipping non-Note activity: {item.get('type')} - {item.get('object', {}).get('type')}")
-            except Exception as e:
-                print(f"Error processing item: {e}")
-                print(f"Item content: {item}")
+                        print(f"Skipping non-Note activity: {item.get('type')} - {item.get('object', {}).get('type')}")
+                except Exception as e:
+                    print(f"Error processing item: {e}")
+                    print(f"Item content: {item}")
+            
+            # Get next page URL
+            next_page_url = page_data.get('next')
+            current_page += 1
+            
+            if not next_page_url:
+                print("No more pages available")
+                break
                 
         print(f"Returning {len(posts)} posts")
         return posts
@@ -138,62 +156,72 @@ def tablon(request):
     follows = Follow.objects.filter(follower=request.user)
     print(f"Found {follows.count()} remote follows: {[f.actor_url for f in follows]}")
     
-    # Clean up and update remote posts
-    for follow in follows:
-        print(f"\nChecking posts from {follow.actor_url}")
-        try:
-            # Try to fetch actor info first
-            headers = {
-                'Accept': 'application/activity+json'
-            }
-            response = requests.get(follow.actor_url, headers=headers, timeout=10)
-            
-            if response.status_code != 200:
-                print(f"User no longer exists at {follow.actor_url}, cleaning up...")
-                # User no longer exists, remove their posts and follow
-                RemotePost.objects.filter(actor_url=follow.actor_url).delete()
-                follow.delete()
-                continue
-                
-            # User exists, fetch their posts
-            posts = fetch_remote_posts(follow.actor_url)
-            
-            # Get existing post IDs for this user
-            existing_posts = set(RemotePost.objects.filter(
-                actor_url=follow.actor_url
-            ).values_list('remote_id', flat=True))
-            
-            # Add new posts
-            for post_data in posts:
-                try:
-                    # Verify post still exists
-                    post_response = requests.head(post_data['image_url'], timeout=10)
-                    if post_response.status_code == 200:
-                        RemotePost.objects.get_or_create(
-                            remote_id=post_data['remote_id'],
-                            defaults={
-                                'actor_url': post_data['actor_url'],
-                                'content': post_data['content'],
-                                'image_url': post_data['image_url'],
-                                'published': post_data['published']
-                            }
-                        )
-                except Exception as e:
-                    print(f"Error checking post {post_data['remote_id']}: {e}")
-                    continue
-            
-            # Remove posts that no longer exist
-            posts_to_keep = set(p['remote_id'] for p in posts)
-            deleted_posts = existing_posts - posts_to_keep
-            if deleted_posts:
-                print(f"Removing {len(deleted_posts)} deleted posts")
-                RemotePost.objects.filter(remote_id__in=deleted_posts).delete()
-                
-        except Exception as e:
-            print(f"Error processing follow {follow.actor_url}: {e}")
-            continue
+    remote_posts = []
+    force_refresh = request.GET.get('refresh') == '1'
     
-    # Get remaining valid remote posts
+    # Process each followed user
+    for follow in follows:
+        cache_key = f'remote_posts_{follow.actor_url}'
+        cached_data = None if force_refresh else cache.get(cache_key)
+        
+        if cached_data is None:
+            print(f"\nCache miss for {follow.actor_url}, fetching fresh data...")
+            try:
+                # Try to fetch actor info first
+                headers = {
+                    'Accept': 'application/activity+json'
+                }
+                response = requests.get(follow.actor_url, headers=headers, timeout=10)
+                
+                if response.status_code != 200:
+                    print(f"User no longer exists at {follow.actor_url}, cleaning up...")
+                    # User no longer exists, remove their posts and follow
+                    RemotePost.objects.filter(actor_url=follow.actor_url).delete()
+                    follow.delete()
+                    continue
+                    
+                # User exists, fetch their posts
+                posts = fetch_remote_posts(follow.actor_url)
+                
+                # Get existing post IDs for this user
+                existing_posts = set(RemotePost.objects.filter(
+                    actor_url=follow.actor_url
+                ).values_list('remote_id', flat=True))
+                
+                # Add new posts
+                for post_data in posts:
+                    try:
+                        # Verify post still exists
+                        post_response = requests.head(post_data['image_url'], timeout=10)
+                        if post_response.status_code == 200:
+                            RemotePost.objects.get_or_create(
+                                remote_id=post_data['remote_id'],
+                                defaults={
+                                    'actor_url': post_data['actor_url'],
+                                    'content': post_data['content'],
+                                    'image_url': post_data['image_url'],
+                                    'published': post_data['published']
+                                }
+                            )
+                    except Exception as e:
+                        print(f"Error checking post {post_data['remote_id']}: {e}")
+                        continue
+                
+                # Remove posts that no longer exist
+                posts_to_keep = set(p['remote_id'] for p in posts)
+                deleted_posts = existing_posts - posts_to_keep
+                if deleted_posts:
+                    print(f"Removing {len(deleted_posts)} deleted posts")
+                    RemotePost.objects.filter(remote_id__in=deleted_posts).delete()
+                    
+                # Cache the results
+                cache.set(cache_key, True, timeout=3600)  # Cache for 1 hour
+                    
+            except Exception as e:
+                print(f"Error processing follow {follow.actor_url}: {e}")
+                continue
+    
+    # Get remaining valid remote posts from database
     remote_posts = RemotePost.objects.filter(
         actor_url__in=follows.values_list('actor_url', flat=True)
     ).order_by('-published')
@@ -210,6 +238,7 @@ def tablon(request):
     context = {
         'fotos': fotos,
         'usuario': request.user,
+        'last_refresh': timezone.now(),
     }
     return render(request, 'tablon.html', context)
 
